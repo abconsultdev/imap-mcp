@@ -1,0 +1,37 @@
+{
+  "name": "imap-mcp",
+  "version": "1.1.0",
+  "description": "Lokaler MCP-Server fuer IMAP-Postfaecher und SMTP-Versand",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "node --test",
+    "bundle": "node scripts/build-bundle.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "imapflow": "^2.0.5",
+    "mailparser": "^3.9.28",
+    "nodemailer": "^10.0.10",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^26.6.1",
+    "@types/nodemailer": "^8.0.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "bin": {
+    "imap-mcp": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  }
+}

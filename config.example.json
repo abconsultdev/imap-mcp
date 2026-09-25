@@ -1,0 +1,25 @@
+{
+  "downloadDir": "E:\\Dev\\IMAP_MCP\\downloads",
+  "accounts": [
+    {
+      "name": "hauptpostfach",
+      "email": "info@example.com",
+      "displayName": "Dein Name",
+      "allowSend": true,
+      "imap": {
+        "host": "imap.example.com",
+        "port": 993,
+        "secure": true,
+        "user": "info@example.com",
+        "pass": "APP-PASSWORT-HIER"
+      },
+      "smtp": {
+        "host": "smtp.example.com",
+        "port": 465,
+        "secure": true,
+        "user": "info@example.com",
+        "pass": "APP-PASSWORT-HIER"
+      }
+    }
+  ]
+}

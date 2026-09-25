@@ -1,0 +1,192 @@
+{
+  "manifest_version": "0.1",
+  "name": "imap-mail",
+  "display_name": "E-Mail (IMAP & SMTP)",
+  "version": "1.1.0",
+  "description": "Verbindet Claude mit einem oder zwei E-Mail-Postfächern über IMAP und SMTP - ohne Umweg über einen Anbieter-Konnektor.",
+  "long_description": "Liest, durchsucht und sortiert Mails in jedem IMAP-Postfach und verschickt Antworten über SMTP. Die Server-Einstellungen werden automatisch aus der E-Mail-Adresse ermittelt, in den meisten Fällen genügen Adresse und Passwort. Bis zu zwei Postfächer lassen sich gleichzeitig einrichten. Passwörter werden im Schlüsselbund des Betriebssystems abgelegt, nicht in einer Datei. Alles läuft lokal auf dem eigenen Rechner; Mails gehen ausschließlich an den eigenen Mailserver.",
+  "author": {
+    "name": "IMAP MCP"
+  },
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {
+        "MAIL_EMAIL": "${user_config.email}",
+        "MAIL_PASSWORD": "${user_config.password}",
+        "MAIL_DISPLAY_NAME": "${user_config.display_name}",
+        "MAIL_ALLOW_SEND": "${user_config.allow_send}",
+        "MAIL_IMAP_HOST": "${user_config.imap_host}",
+        "MAIL_SMTP_HOST": "${user_config.smtp_host}",
+        "MAIL2_EMAIL": "${user_config.email_2}",
+        "MAIL2_PASSWORD": "${user_config.password_2}",
+        "MAIL2_DISPLAY_NAME": "${user_config.display_name_2}",
+        "MAIL2_ALLOW_SEND": "${user_config.allow_send_2}",
+        "MAIL2_IMAP_HOST": "${user_config.imap_host_2}",
+        "MAIL2_SMTP_HOST": "${user_config.smtp_host_2}",
+        "MAIL_AUTODETECT_ONLINE": "${user_config.autodetect_online}"
+      }
+    }
+  },
+  "user_config": {
+    "email": {
+      "type": "string",
+      "title": "E-Mail-Adresse",
+      "description": "Die vollständige Adresse des Postfachs, z.B. name@meinefirma.de",
+      "required": true
+    },
+    "password": {
+      "type": "string",
+      "title": "Passwort",
+      "description": "Das Passwort des Postfachs. Wo möglich ein App-Passwort verwenden (Gmail, iCloud und Yahoo verlangen das sogar). Wird im Schlüsselbund des Systems gespeichert, nicht in einer Datei.",
+      "sensitive": true,
+      "required": true
+    },
+    "allow_send": {
+      "type": "boolean",
+      "title": "Senden erlauben",
+      "description": "Aus: Claude kann lesen, suchen, sortieren und Entwürfe anlegen, aber keine Mail verschicken. An: Claude darf nach deiner Bestätigung auch senden.",
+      "default": false,
+      "required": false
+    },
+    "display_name": {
+      "type": "string",
+      "title": "Absendername",
+      "description": "Name, der beim Empfänger im Absender steht, z.B. Anna Beispiel. Leer lassen, um nur die Adresse zu zeigen.",
+      "required": false
+    },
+    "email_2": {
+      "type": "string",
+      "title": "Zweites Postfach: E-Mail-Adresse (optional)",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen - dann bleiben auch die übrigen Felder für das zweite Postfach unbeachtet.",
+      "required": false
+    },
+    "password_2": {
+      "type": "string",
+      "title": "Zweites Postfach: Passwort",
+      "description": "Passwort des zweiten Postfachs. Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "allow_send_2": {
+      "type": "boolean",
+      "title": "Zweites Postfach: Senden erlauben",
+      "description": "Gilt nur für das zweite Postfach, unabhängig vom ersten.",
+      "default": false,
+      "required": false
+    },
+    "display_name_2": {
+      "type": "string",
+      "title": "Zweites Postfach: Absendername",
+      "description": "Name im Absender beim zweiten Postfach. Leer lassen, um nur die Adresse zu zeigen.",
+      "required": false
+    },
+    "autodetect_online": {
+      "type": "boolean",
+      "title": "Server online nachschlagen",
+      "description": "An: unbekannte Anbieter werden über den MX-Eintrag der Domain und Mozillas Autoconfig-Datenbank ermittelt. Dabei wird nur die Domain abgefragt, nie die Adresse oder das Passwort. Aus: nur die eingebaute Anbieterliste.",
+      "default": true,
+      "required": false
+    },
+    "imap_host": {
+      "type": "string",
+      "title": "IMAP-Server (leer lassen)",
+      "description": "Leer lassen! Der Server wird beim Start automatisch aus der E-Mail-Adresse ermittelt. Nur ausfüllen, wenn das nachweislich fehlschlägt, dann z.B. imap.meinanbieter.de",
+      "required": false
+    },
+    "smtp_host": {
+      "type": "string",
+      "title": "SMTP-Server (leer lassen)",
+      "description": "Leer lassen! Wird ebenfalls automatisch ermittelt. Nur ausfüllen, wenn das fehlschlägt, dann z.B. smtp.meinanbieter.de",
+      "required": false
+    },
+    "imap_host_2": {
+      "type": "string",
+      "title": "Zweites Postfach: IMAP-Server (leer lassen)",
+      "description": "Leer lassen! Wird automatisch ermittelt. Nur ausfüllen, wenn das fehlschlägt.",
+      "required": false
+    },
+    "smtp_host_2": {
+      "type": "string",
+      "title": "Zweites Postfach: SMTP-Server (leer lassen)",
+      "description": "Leer lassen! Wird automatisch ermittelt. Nur ausfüllen, wenn das fehlschlägt.",
+      "required": false
+    }
+  },
+  "tools": [
+    {
+      "name": "mail_list_accounts",
+      "description": "Eingerichtete Postfächer anzeigen"
+    },
+    {
+      "name": "mail_test_connection",
+      "description": "IMAP- und SMTP-Anmeldung prüfen"
+    },
+    {
+      "name": "mail_detect_provider",
+      "description": "Server-Einstellungen zu einer Adresse ermitteln"
+    },
+    {
+      "name": "mail_list_mailboxes",
+      "description": "Ordner des Postfachs auflisten"
+    },
+    {
+      "name": "mail_search",
+      "description": "Mails nach Absender, Betreff, Text oder Datum durchsuchen"
+    },
+    {
+      "name": "mail_read",
+      "description": "Eine Mail vollständig lesen"
+    },
+    {
+      "name": "mail_get_raw",
+      "description": "Rohen Quelltext einer Mail anzeigen"
+    },
+    {
+      "name": "mail_save_attachment",
+      "description": "Anhänge speichern"
+    },
+    {
+      "name": "mail_set_flags",
+      "description": "Mails als gelesen oder markiert kennzeichnen"
+    },
+    {
+      "name": "mail_move",
+      "description": "Mails in einen anderen Ordner verschieben"
+    },
+    {
+      "name": "mail_move_to_trash",
+      "description": "Mails in den Papierkorb verschieben"
+    },
+    {
+      "name": "mail_create_draft",
+      "description": "Eine Mail als Entwurf ablegen, ohne zu senden"
+    },
+    {
+      "name": "mail_send",
+      "description": "Eine Mail über SMTP versenden"
+    }
+  ],
+  "keywords": [
+    "email",
+    "imap",
+    "smtp",
+    "mail",
+    "postfach"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32"
+    ],
+    "runtimes": {
+      "node": ">=18.17"
+    }
+  }
+}
