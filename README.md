@@ -216,7 +216,7 @@ Claude-Konfiguration unterscheiden sich. Nötig ist Node ≥ 18.17.
 deshalb in `.gitignore`. Leg sie auf dem zweiten Rechner neu an, statt sie zu kopieren:
 
 ```bash
-git clone <dein-privates-repo> ~/Dev/IMAP_MCP
+git clone https://github.com/abconsultdev/imap-mcp.git ~/Dev/IMAP_MCP
 cd ~/Dev/IMAP_MCP && npm install && npm run build
 ```
 
