@@ -5,51 +5,35 @@ Läuft komplett auf deinem Rechner — Zugangsdaten und Mails verlassen die Masc
 
 Es gibt zwei Wege:
 
-| | [Weg A: Fertiges Bundle](#weg-a-fertiges-bundle-für-endnutzer) | [Weg B: Aus dem Quellcode](#weg-b-aus-dem-quellcode-für-entwickler) |
+| | [Weg A: Fertiges Bundle](#weg-a-fertiges-bundle) | [Weg B: Aus dem Quellcode](#weg-b-aus-dem-quellcode) |
 | --- | --- | --- |
-| Für wen | Endnutzer, Workshops, Schulungen | Entwicklung, mehr als zwei Postfächer, Linux |
+| Für wen | alle, die einfach ihr Postfach anbinden wollen | Entwicklung, mehr als zwei Postfächer, Linux, Claude Code |
 | Postfächer | bis zu zwei | beliebig viele |
-| Voraussetzungen | nur Claude Desktop | Node ≥ 18.17, Terminal |
+| Voraussetzungen | nur Claude Desktop (macOS oder Windows) | Node ≥ 18.17, Terminal |
 | Installation | Datei doppelklicken, Adresse + Passwort eintippen | klonen, bauen, JSON konfigurieren |
 | Server-Einstellungen | automatisch erkannt | automatisch oder von Hand |
 | Passwort liegt | im Schlüsselbund des Systems | im Klartext in `config.json` |
 
 ---
 
-# Weg A: Fertiges Bundle (für Endnutzer)
+# Weg A: Fertiges Bundle
 
 Claude Desktop bringt auf macOS und Windows eine eigene Node-Laufzeit mit. Als `.mcpb`-Bundle verpackt
-braucht niemand Node, Terminal oder Git.
+braucht der Server weder Node noch Terminal noch Git.
 
-## Bundle bauen (einmalig, macht die Kursleitung)
+## Installieren
 
-```bash
-npm install && npm run bundle
-```
-
-Ergebnis: `build/imap-mail.mcpb` — **rund 1 MB, vier Dateien**. Diese eine Datei wird verteilt, per
-USB-Stick, Cloud-Ordner oder Download-Link. Sie ist auf macOS und Windows identisch.
-
-Der Server wird dabei mit esbuild zu einer einzigen JavaScript-Datei gebündelt. Das spart nicht nur
-Platz: ohne Bündelung lägen rund 5000 Dateien im Bundle, davon ein Drittel Typdeklarationen und
-Sourcemaps, die zur Laufzeit nie geladen werden — dazu die HTTP-Transporte des MCP-SDK (`hono`, `ajv`,
-4,3 MB), die ein stdio-Server nie anfasst.
-
-Bündeln kann dynamisch nachgeladene Module zerreißen — `iconv-lite` lädt Zeichensatz-Tabellen zur
-Laufzeit, `mailparser` und `MailComposer` ziehen Module über `require()` herein. Ein solcher Bruch
-fiele sonst erst beim ersten Umlaut in einer echten Mail auf. Deshalb prüft `npm run bundle` sein
-eigenes Ergebnis, bevor gepackt wird: Zeichensatz-Umwandlung, Anhänge, Mail-Aufbau und die komplette
-Konfigurationsmatrix laufen gegen die gebündelte Datei. Schlägt eine Prüfung fehl, entsteht kein
-`.mcpb`. Mit `npm run bundle -- --skip-checks` lässt sich das überspringen.
-
-## Bundle installieren (macht jeder Teilnehmer)
-
-1. `imap-mail.mcpb` doppelklicken — alternativ ins Claude-Desktop-Fenster ziehen oder unter
+1. **[`imap-mail.mcpb` herunterladen](https://github.com/abconsultdev/imap-mcp/releases/latest/download/imap-mail.mcpb)**
+   (rund 1 MB, dieselbe Datei für macOS und Windows).
+2. Die Datei doppelklicken — alternativ ins Claude-Desktop-Fenster ziehen oder unter
    Einstellungen → Erweiterungen → Erweiterte Einstellungen → Erweiterung installieren auswählen.
-2. Im Installationsdialog **E-Mail-Adresse** und **Passwort** eintragen. Alle anderen Felder sind optional.
-3. Installieren, fertig. Kein Neustart nötig.
+3. Im Installationsdialog **E-Mail-Adresse** und **Passwort** eintragen. Alle anderen Felder sind optional.
+4. Installieren, fertig. Kein Neustart nötig.
 
 Erster Test im Chat: *„Teste die Mail-Verbindung"*.
+
+Das Bundle ist nicht signiert. Claude Desktop kann deshalb beim Installieren auf einen unbekannten
+Herausgeber hinweisen.
 
 **Was im Dialog abgefragt wird**
 
@@ -60,10 +44,39 @@ Erster Test im Chat: *„Teste die Mail-Verbindung"*.
 | Senden erlauben | Standardmäßig **aus** — Claude kann dann lesen und Entwürfe anlegen, aber nichts verschicken |
 | Absendername | optional |
 | Zweites Postfach: Adresse, Passwort, Senden, Absendername | optional — leer lassen, wenn nur ein Postfach gebraucht wird |
-| Server online nachschlagen | siehe unten |
-| IMAP-/SMTP-Server (je Postfach) | nur nötig, wenn die Erkennung scheitert |
+| Server online nachschlagen | siehe [Server-Erkennung](#wie-die-server-erkennung-funktioniert) |
+| IMAP-/SMTP-Server (je Postfach) | leer lassen, nur nötig, wenn die Erkennung scheitert |
 
 Anhänge landen im Downloads-Ordner.
+
+## Vor der Einrichtung
+
+Die meisten Probleme entstehen nicht im Connector, sondern beim Mail-Anbieter:
+
+- **Gmail, iCloud, Yahoo:** Das normale Passwort wird abgelehnt. Nötig ist ein App-Passwort aus den
+  Kontoeinstellungen, bei Gmail zusätzlich aktivierte Zwei-Faktor-Anmeldung.
+- **GMX, Web.de:** IMAP ist standardmäßig aus und muss im Webmail unter Einstellungen freigeschaltet werden.
+- **Microsoft 365 / Outlook:** Viele Organisationen haben die Anmeldung per Passwort abgeschaltet. Dann
+  lässt sich das Postfach mit diesem Connector nicht anbinden (siehe [Einschränkungen](#einschränkungen)).
+- **Eigene Domain:** Funktioniert in der Regel ohne weitere Angaben, weil der Anbieter über den
+  MX-Eintrag der Domain erkannt wird.
+
+Wer vorab wissen will, ob eine Adresse erkannt wird, kann Claude mit `mail_detect_provider` fragen —
+das braucht weder Passwort noch Anmeldung.
+
+Wo der Anbieter App-Passwörter anbietet, lohnen sie sich auch ohne Pflicht: Sie lassen sich einzeln
+widerrufen, ohne das Postfach-Passwort zu ändern.
+
+## Erste Schritte
+
+Gute erste Fragen, die nur lesen und nichts verändern:
+
+- *„Was ist heute ungelesen reingekommen?"*
+- *„Fass mir den längsten Mailverlauf dieser Woche zusammen."*
+- *„Von welchen Newslettern bekomme ich am meisten Mails?"*
+
+Senden bleibt so lange aus, bis es im Dialog freigegeben wird. Wer den Versand ausprobieren will,
+schickt die erste Testmail am besten an die eigene Adresse.
 
 ## Zwei Postfächer
 
@@ -81,7 +94,7 @@ kennt. Über `config.json` (Weg B) ist die Zahl unbegrenzt.
 
 ## Wie die Server-Erkennung funktioniert
 
-Niemand muss seinen IMAP-Host kennen. Der Server probiert der Reihe nach:
+Niemand muss seinen IMAP-Server kennen. Der Connector probiert der Reihe nach:
 
 1. **Eingebaute Anbieterliste** — Gmail, GMX, Web.de, T-Online, Posteo, mailbox.org, iCloud, Yahoo,
    Outlook und weitere, erkannt an der Domain der Adresse.
@@ -93,32 +106,34 @@ Niemand muss seinen IMAP-Host kennen. Der Server probiert der Reihe nach:
 
 Schritte 2 und 3 brauchen Netzwerk und fragen dabei **nur die Domain** ab, nie die Adresse oder das
 Passwort. Wer das nicht möchte, schaltet „Server online nachschlagen" aus; dann greift nur die
-eingebaute Liste, und exotische Anbieter müssen von Hand eingetragen werden.
+eingebaute Liste, und seltenere Anbieter müssen von Hand eingetragen werden.
 
-Das Tool `mail_detect_provider` macht dieselbe Abfrage für eine beliebige Adresse, ohne Passwort und
-ohne Anmeldung — praktisch, um im Workshop vorab zu klären, wer sich überhaupt verbinden kann.
+## Aktualisieren und entfernen
+
+**Update:** Unter Einstellungen → Erweiterungen die alte Version deinstallieren, dann die neue Datei
+installieren. Die Zugangsdaten werden dabei neu abgefragt.
+
+**Entfernen:** Ebenfalls über Einstellungen → Erweiterungen. Die Passwörter werden dabei aus dem
+Schlüsselbund gelöscht, es bleiben keine Zugangsdaten auf dem Rechner zurück.
 
 ---
 
-# Weg B: Aus dem Quellcode (für Entwickler)
+# Weg B: Aus dem Quellcode
 
 ## 1. Installieren
 
 ```bash
-cd E:\Dev\IMAP_MCP && npm install && npm run build
+git clone https://github.com/abconsultdev/imap-mcp.git
+cd imap-mcp && npm install && npm run build
 ```
 
 ## 2. Konfigurieren
 
-`config.example.json` nach `config.json` kopieren und ausfüllen:
-
-```bash
-copy E:\Dev\IMAP_MCP\config.example.json E:\Dev\IMAP_MCP\config.json
-```
+`config.example.json` nach `config.json` kopieren und ausfüllen. Die Datei enthält Passwörter im
+Klartext und steht deshalb in `.gitignore`.
 
 ```json
 {
-  "downloadDir": "E:\\Dev\\IMAP_MCP\\downloads",
   "accounts": [
     {
       "name": "hauptpostfach",
@@ -134,12 +149,14 @@ copy E:\Dev\IMAP_MCP\config.example.json E:\Dev\IMAP_MCP\config.json
 
 | Feld | Bedeutung |
 | --- | --- |
-| `name` | Kurzname, den du im Chat benutzt ("lies die Mails im hauptpostfach") |
+| `name` | Kurzname, den du im Chat benutzt (*„lies die Mails im hauptpostfach"*) |
 | `displayName` | Absendername im From-Header |
 | `allowSend` | `false` = reiner Lesezugriff, `mail_send` verweigert dann den Dienst |
 | `secure` | `true` bei Port 993/465 (direktes TLS), `false` bei 143/587 (STARTTLS) |
 | `allowInvalidCert` | nur für interne Server mit selbstsigniertem Zertifikat |
+| `enableIMAP4rev2` | IMAP4rev2 nutzen, falls der Server es anbietet. Standard aus, siehe [Fehlersuche](#fehlersuche) |
 | `mailboxes` | optional, überschreibt die Auto-Erkennung von Gesendet/Entwürfe/Papierkorb |
+| `downloadDir` | (oberste Ebene) Ordner für Anhänge, Standard `<projekt>/downloads` |
 
 Mehrere Postfächer: einfach weitere Objekte in `accounts` eintragen. Bei mehr als einem Account
 verlangt jedes Tool den Parameter `account`.
@@ -149,15 +166,12 @@ verlangt jedes Tool den Parameter `account`.
 | Anbieter | IMAP | SMTP | Hinweis |
 | --- | --- | --- | --- |
 | Gmail / Workspace | `imap.gmail.com:993` | `smtp.gmail.com:465` | App-Passwort nötig (2FA erforderlich) |
-| Microsoft 365 / Outlook | `outlook.office365.com:993` | `smtp.office365.com:587` (`secure: false`) | Basic-Auth oft gesperrt — dann geht nur OAuth, siehe Einschränkungen |
+| Microsoft 365 / Outlook | `outlook.office365.com:993` | `smtp.office365.com:587` (`secure: false`) | Passwort-Anmeldung oft gesperrt, siehe Einschränkungen |
 | IONOS | `imap.ionos.de:993` | `smtp.ionos.de:465` | |
 | Strato | `imap.strato.de:993` | `smtp.strato.de:465` | |
 | All-Inkl | `<server>.kasserver.com:993` | `<server>.kasserver.com:465` | |
 | mailbox.org | `imap.mailbox.org:993` | `smtp.mailbox.org:465` | eigenes App-Passwort empfohlen |
-| GMX / Web.de | `imap.gmx.net:993` / `imap.web.de:993` | `mail.gmx.net:465` / `smtp.web.de:465` | POP3/IMAP muss in den Einstellungen freigeschaltet sein |
-
-Nutze überall, wo es geht, ein **App-spezifisches Passwort** statt des Account-Passworts — das lässt
-sich einzeln widerrufen, ohne das Postfach-Passwort zu ändern.
+| GMX / Web.de | `imap.gmx.net:993` / `imap.web.de:993` | `mail.gmx.net:465` / `smtp.web.de:465` | IMAP muss in den Einstellungen freigeschaltet sein |
 
 ### Alternative: Umgebungsvariablen
 
@@ -178,82 +192,48 @@ Vorrang vor `config.json`.**
 | `IMAP_MCP_CONFIG` | abweichender Pfad zur `config.json` |
 
 Werte, die noch einen unersetzten Platzhalter der Form `${...}` enthalten, werden als *nicht gesetzt*
-behandelt — siehe [Fehlersuche](#fehlersuche). Die älteren Namen `IMAP_HOST`, `IMAP_USER`, `IMAP_PASS`,
-`IMAP_PORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` funktionieren weiterhin.
+behandelt. Die älteren Namen `IMAP_HOST`, `IMAP_USER`, `IMAP_PASS`, `IMAP_PORT`, `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` funktionieren weiterhin.
 
 ## 3. In Claude eintragen
 
-Der Server spricht MCP über stdio. Eintrag in `%APPDATA%\Claude\claude_desktop_config.json`
-(Claude Desktop → Einstellungen → Entwickler → Konfiguration bearbeiten):
+Der Server spricht MCP über stdio. In Claude Desktop unter Einstellungen → Entwickler → Konfiguration
+bearbeiten eintragen — der Pfad muss absolut sein:
 
 ```json
 {
   "mcpServers": {
     "imap": {
       "command": "node",
-      "args": ["E:\\Dev\\IMAP_MCP\\dist\\index.js"]
+      "args": ["/absoluter/pfad/zu/imap-mcp/dist/index.js"]
     }
   }
 }
 ```
 
-Danach Claude Desktop **komplett beenden und neu starten** — die MCP-Server werden nur beim Start geladen.
+Die Datei liegt unter `%APPDATA%\Claude\claude_desktop_config.json` (Windows) bzw.
+`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS). Unter Windows werden
+Backslashes im Pfad verdoppelt (`"C:\\Users\\...\\dist\\index.js"`) oder durch `/` ersetzt; unter
+macOS wird `~` nicht aufgelöst. Startet der Server nicht, weil Claude Desktop Node nicht findet
+(typisch bei nvm oder Homebrew), statt `"node"` den vollen Pfad aus `which node` eintragen.
 
-In Claude Code alternativ:
+Danach Claude Desktop **komplett beenden und neu starten** — MCP-Server werden nur beim Start geladen.
 
-```bash
-claude mcp add imap --scope user -- node E:\Dev\IMAP_MCP\dist\index.js
-```
-
-Erster Test im Chat: *"Teste die Mail-Verbindung"* → ruft `mail_test_connection` auf und meldet IMAP und SMTP getrennt.
-
-## Auf einem zweiten Rechner (macOS / Linux)
-
-Der Server ist plattformneutral — im Quellcode stehen keine Windows-Pfade. Nur Ablageort und
-Claude-Konfiguration unterscheiden sich. Nötig ist Node ≥ 18.17.
-
-**1. Projekt übertragen — ohne `config.json`.** Die Datei enthält dein Passwort im Klartext und steht
-deshalb in `.gitignore`. Leg sie auf dem zweiten Rechner neu an, statt sie zu kopieren:
+In Claude Code:
 
 ```bash
-git clone https://github.com/abconsultdev/imap-mcp.git ~/Dev/IMAP_MCP
-cd ~/Dev/IMAP_MCP && npm install && npm run build
+claude mcp add imap --scope user -- node /absoluter/pfad/zu/imap-mcp/dist/index.js
 ```
 
-Ohne Repo reicht es, `src/`, `package.json`, `package-lock.json`, `tsconfig.json` und `README.md` zu
-übertragen — `node_modules/` und `dist/` entstehen beim `npm install && npm run build` neu und
-gehören nicht in den Transfer.
+Erster Test im Chat: *„Teste die Mail-Verbindung"* → ruft `mail_test_connection` auf und meldet IMAP und
+SMTP getrennt.
 
-**2. `config.json` neu anlegen.** Identisch zur Windows-Fassung, aber `downloadDir` einfach weglassen —
-dann landen Anhänge automatisch in `<projekt>/downloads`:
+Mehrere Rechner können parallel auf dasselbe Postfach zugreifen — IMAP ist dafür gebaut. Die
+`config.json` dabei auf jedem Rechner neu anlegen, statt sie zu kopieren.
 
-```bash
-cp config.example.json config.json && chmod 600 config.json
-```
+---
 
-**3. In Claude Desktop eintragen** — auf dem Mac liegt die Datei unter
-`~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "imap": {
-      "command": "node",
-      "args": ["/Users/DEIN-NAME/Dev/IMAP_MCP/dist/index.js"]
-    }
-  }
-}
-```
-
-Der Pfad muss absolut sein — `~` wird nicht aufgelöst. `which node` verrät, ob Node im PATH von
-Claude Desktop liegt; falls der Server nicht startet, trag statt `"node"` den vollen Pfad aus
-`which node` ein (typisch bei Node über nvm oder Homebrew).
-
-Danach Claude Desktop neu starten und *"Teste die Mail-Verbindung"* aufrufen.
-
-**Beide Rechner parallel** greifen problemlos auf dasselbe Postfach zu — IMAP ist dafür gebaut.
-Gelesen-Markierungen und verschobene Mails sieht der jeweils andere Rechner. Nur `downloadDir` ist
-lokal: gespeicherte Anhänge liegen auf dem Rechner, der sie geholt hat.
+# Referenz
 
 ## Tools
 
@@ -261,7 +241,7 @@ lokal: gespeicherte Anhänge liegen auf dem Rechner, der sie geholt hat.
 
 | Tool | Zweck |
 | --- | --- |
-| `mail_list_accounts` | Konfigurierte Postfächer (ohne Passwörter) |
+| `mail_list_accounts` | Eingerichtete Postfächer (ohne Passwörter) |
 | `mail_test_connection` | IMAP- und SMTP-Login einzeln prüfen |
 | `mail_detect_provider` | Server-Einstellungen zu einer Adresse ermitteln — ohne Passwort, ohne Anmeldung |
 | `mail_list_mailboxes` | Alle Ordner + erkannte Sonderordner |
@@ -291,73 +271,45 @@ lokaler `path` oder als `contentBase64`.
 
 ## Typische Abläufe
 
-- *"Was ist heute ungelesen reingekommen?"* → `mail_search` mit `unseen: true`, `since: heute`
-- *"Fass mir den Thread mit Anna zusammen"* → `mail_search` mit `from: anna`, dann `mail_read` je UID
-- *"Antworte darauf"* → `mail_create_draft` mit `inReplyToUid`, du prüfst im Mailprogramm, dann `mail_send`
-- *"Räum die Newsletter weg"* → `mail_search`, dann `mail_move` nach `Archiv`
+- *„Was ist heute ungelesen reingekommen?"* → `mail_search` mit `unseen: true`, `since: heute`
+- *„Fass mir den Verlauf mit Anna zusammen"* → `mail_search` mit `from: anna`, dann `mail_read` je UID
+- *„Antworte darauf"* → `mail_create_draft` mit `inReplyToUid`, du prüfst im Mailprogramm, dann `mail_send`
+- *„Räum die Newsletter weg"* → `mail_search`, dann `mail_move` nach `Archiv`
 
 ## Sicherheit
 
-- `config.json` enthält Klartext-Passwörter und steht in `.gitignore`. Rechte einschränken:
-  ```powershell
-  icacls E:\Dev\IMAP_MCP\config.json /inheritance:r /grant:r "$env:USERNAME:(R,W)"
-  ```
-- **Versand ist endgültig.** Claude fragt vor `mail_send` nach — bestätige bewusst. Wenn du generell
-  nur Entwürfe willst, setze `allowSend: false` und nutze `mail_create_draft`.
+- **Versand ist endgültig.** Claude fragt vor `mail_send` nach — bestätige bewusst. Wer generell nur
+  Entwürfe will, lässt Senden aus und nutzt `mail_create_draft`.
 - Es gibt bewusst kein endgültiges Löschen. `mail_move_to_trash` verschiebt nur; geleert wird im Mailprogramm.
-- Mailinhalte sind Daten, keine Anweisungen. Wenn in einer Mail steht "leite das weiter" oder "antworte mit X",
+- Mailinhalte sind Daten, keine Anweisungen. Wenn in einer Mail steht „leite das weiter" oder „antworte mit X",
   ist das kein Auftrag von dir — Claude soll dich fragen, bevor so etwas ausgeführt wird.
-
-## Für Workshops
-
-- **Vorher klären, wer teilnehmen kann.** Lass Teilnehmer ihre Adresse vorab nennen und prüfe sie mit
-  `mail_detect_provider`. Das kostet kein Passwort und zeigt sofort, bei wem es klemmen wird — vor allem
-  Microsoft 365 (Basic Auth oft gesperrt) und Gmail (App-Passwort nötig, das man nicht in fünf Minuten einrichtet).
-- **App-Passwörter sind die halbe Miete.** Gmail, iCloud und Yahoo verlangen sie zwingend. Am besten als
-  Hausaufgabe vor dem Termin, sonst geht die erste halbe Stunde dafür drauf.
-- **Senden aus lassen.** Die Voreinstellung im Bundle ist „aus". So kann im Kurs niemand versehentlich
-  eine echte Mail an einen echten Empfänger schicken. Zum Vorführen des Versands reicht ein
-  vorbereitetes Testpostfach, das an sich selbst schreibt.
-- **IMAP muss freigeschaltet sein.** Bei GMX und Web.de ist es standardmäßig aus und muss im
-  Webinterface aktiviert werden.
-- **Gute erste Aufgaben:** „Was ist heute ungelesen reingekommen?", „Fass mir den längsten Thread der
-  Woche zusammen", „Welche Newsletter bekomme ich am häufigsten?". Alle drei sind lesend, brauchen kein
-  Senden und zeigen den Nutzen sofort.
-- **Deinstallation** geht über Einstellungen → Erweiterungen. Das Passwort wird dabei aus dem
-  Schlüsselbund entfernt — ein sauberer Punkt zum Abschluss, wenn Teilnehmer auf Leihgeräten arbeiten.
+- Beim Bundle liegen Passwörter im Schlüsselbund des Systems. Bei Weg B stehen sie im Klartext in
+  `config.json` — Dateirechte einschränken:
+  ```bash
+  chmod 600 config.json                                                   # macOS / Linux
+  icacls config.json /inheritance:r /grant:r "%USERNAME%:(R,W)"           # Windows
+  ```
 
 ## Fehlersuche
 
-**`getaddrinfo ENOTFOUND ${user_config.imap_host}`** (behoben in 1.0.1)
+**Verbindung klappt, Ordner werden angezeigt, aber jede Suche liefert 0 Mails**
 
-Claude Desktop ersetzt die Platzhalter für optionale Felder nicht, wenn man sie im Installationsdialog
-leer lässt — der Text `${user_config.imap_host}` kommt dann wörtlich beim Server an und wird als
-Hostname im DNS gesucht. Seit 1.0.1 gelten solche Werte als „nicht gesetzt", die automatische Erkennung
-greift wie vorgesehen. Wer die Meldung noch sieht, hat eine ältere Version installiert: Extension
-deinstallieren, neues Bundle installieren.
-
-**Verbindung klappt, Ordner werden angezeigt, aber jede Suche liefert 0 Mails** (behoben in 1.0.2)
-
-Betraf Strato und potenziell weitere Anbieter. Der Server kündigt IMAP4rev2 an; unter rev2 beantwortet
-er aber jede Suche mit einer leeren Ergebnisliste (`* ESEARCH (TAG "8") UID`), obwohl das Postfach voll
-ist. Seit 1.0.2 bleibt rev2 ausgeschaltet — IMAP4rev1 versteht jeder Server. Außerdem kommen „die
-neuesten N Mails" ohne Filter gar nicht mehr über eine Suche, sondern direkt über die Nachrichtennummern.
-Wer rev2 für einen bestimmten Server braucht, setzt in `config.json` unter `imap` den Schalter
-`"enableIMAP4rev2": true`.
-
+Manche Server kündigen IMAP4rev2 an, beantworten unter rev2 aber jede Suche mit einer leeren
+Ergebnisliste (`* ESEARCH (TAG "8") UID`), obwohl das Postfach voll ist — beobachtet bei Strato. Der
+Connector schaltet rev2 deshalb standardmäßig ab; IMAP4rev1 versteht jeder Server. Wer rev2 für einen
+bestimmten Server braucht, setzt in `config.json` unter `imap` den Schalter `"enableIMAP4rev2": true`.
 Ob die Suche gegen ein konkretes Postfach funktioniert, prüft `node test/live.mjs` (rein lesend).
 
 **Die Server-Felder im Installationsdialog bleiben leer — ist das richtig?**
 
 Ja. Der Dialog füllt nichts automatisch aus; die Erkennung passiert erst beim Start des Servers, aus
-der eingegebenen Adresse. Die beiden Host-Felder sind nur ein Notausgang für den Fall, dass die
-Erkennung scheitert. Was tatsächlich erkannt wurde, zeigt `mail_test_connection` unter
-`serverErkanntVia`.
+der eingegebenen Adresse. Die Host-Felder sind nur ein Notausgang für den Fall, dass die Erkennung
+scheitert. Was tatsächlich erkannt wurde, zeigt `mail_test_connection` unter `serverErkanntVia`.
 
 **`Authentication failed` / `LOGIN failed`**
 
 Passwort falsch oder der Anbieter verlangt ein App-Passwort (Gmail, iCloud, Yahoo) — bei GMX und Web.de
-ist IMAP zusätzlich standardmäßig deaktiviert und muss im Webinterface freigeschaltet werden.
+ist IMAP zusätzlich standardmäßig deaktiviert und muss im Webmail freigeschaltet werden.
 
 **Senden schlägt mit „Senden ist deaktiviert" fehl**
 
@@ -369,35 +321,60 @@ Beabsichtigt. Im Installationsdialog den Haken „Senden erlauben" setzen, in `c
 `mail_detect_provider` mit der Adresse aufrufen — die Antwort zeigt, aus welcher Quelle die Werte
 stammen. Notfalls IMAP- und SMTP-Server im Installationsdialog von Hand eintragen.
 
+**`getaddrinfo ENOTFOUND ${user_config.imap_host}`**
+
+Tritt nur mit Versionen vor 1.0.1 auf. Alte Erweiterung deinstallieren, aktuelle installieren.
+
 ## Einschränkungen
 
-- **Nur Passwort-Authentifizierung.** Kein OAuth2/XOAUTH2. Postfächer, bei denen der Anbieter Basic Auth
-  abgeschaltet hat (viele Microsoft-365-Tenants), lassen sich damit nicht anbinden.
-- Volltextsuche macht der IMAP-Server, nicht dieser Wrapper — wie gut `body`/`text` funktioniert, hängt vom Anbieter ab.
-- Sehr große Postfächer: `mail_search` holt Kopfdaten für bis zu 200 Treffer pro Aufruf.
+- **Nur Passwort-Authentifizierung.** Kein OAuth2/XOAUTH2. Postfächer, bei denen der Anbieter die
+  Passwort-Anmeldung abgeschaltet hat (viele Microsoft-365-Organisationen), lassen sich damit nicht anbinden.
+- Die Volltextsuche macht der IMAP-Server, nicht dieser Connector — wie gut `body`/`text` funktioniert,
+  hängt vom Anbieter ab.
+- `mail_search` holt Kopfdaten für bis zu 200 Treffer pro Aufruf.
 - Kein Push/IDLE — Claude sieht neue Mails, wenn es aktiv nachschaut.
 
 ## Entwicklung
 
 ```bash
-npm run build          # nach dist/ kompilieren (Weg B)
-npm run watch          # während der Entwicklung
-npm run bundle         # .mcpb bauen, inkl. aller Prüfungen (Weg A)
-node test/unit.mjs     # Helfer + MailComposer (ohne Netzwerk)
-node test/detect.mjs   # Anbieter-Erkennung gegen echte DNS-/Autoconfig-Abfragen
+npm run build              # nach dist/ kompilieren (Weg B)
+npm run watch              # während der Entwicklung
+npm run bundle             # build/imap-mail.mcpb bauen, inkl. aller Prüfungen (Weg A)
+node test/unit.mjs         # Helfer + MailComposer (ohne Netzwerk)
+node test/detect.mjs       # Anbieter-Erkennung: Liste, MX-Muster, Autoconfig
 node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 15 Fälle
-node test/live.mjs     # gegen das echte Postfach aus config.json, rein lesend
+node test/live.mjs         # gegen das echte Postfach aus config.json, rein lesend
 ```
 
-Der Live-Test ist der einzige, der einen echten Mailserver fragt. Er vergleicht, was der Server laut
-`STATUS` enthält, mit dem, was die Suche findet — Verbindung und Ordnerliste allein beweisen nichts,
-wie der Strato-Fehler gezeigt hat. **Vor einem Workshop lohnt es sich, ihn mit einem Postfach jedes
-Anbieters laufen zu lassen, den die Teilnehmer voraussichtlich nutzen.**
+**Das Bundle** wird mit esbuild zu einer einzigen JavaScript-Datei gebündelt: vier Dateien statt rund
+5000, knapp 1 MB statt 6 MB. Ohne Bündelung lägen Typdeklarationen, Sourcemaps und die HTTP-Transporte
+des MCP-SDK im Bundle, die ein stdio-Server nie lädt.
 
-`test/bundle-libs.ts` wird nicht direkt ausgeführt, sondern von `npm run bundle` gebündelt und gegen
-das Bundle gefahren — nur so prüft es das, was tatsächlich ausgeliefert wird.
+Bündeln kann dynamisch nachgeladene Module zerreißen — `iconv-lite` lädt Zeichensatz-Tabellen zur
+Laufzeit, `mailparser` und `MailComposer` ziehen Module über `require()` herein. Ein solcher Bruch fiele
+sonst erst beim ersten Umlaut in einer echten Mail auf. Deshalb prüft `npm run bundle` sein eigenes
+Ergebnis, bevor gepackt wird: Zeichensatz-Umwandlung, Anhänge, Mail-Aufbau und die komplette
+Konfigurationsmatrix laufen gegen die gebündelte Datei (`test/bundle-libs.ts` wird dafür eigens
+mitgebündelt). Schlägt eine Prüfung fehl, entsteht kein `.mcpb`. Mit `npm run bundle -- --skip-checks`
+lässt sich das überspringen.
 
-**Vor jedem Workshop** genügt ein `npm run bundle`: läuft es durch, sind Typen, Bibliotheken im Bundle
-und alle Konfigurationswege geprüft.
+**Der Live-Test** ist der einzige, der einen echten Mailserver fragt. Er vergleicht, was der Server laut
+`STATUS` enthält, mit dem, was die Suche findet — eine erfolgreiche Verbindung und eine vollständige
+Ordnerliste allein beweisen nicht, dass die Suche funktioniert. Vor einer neuen Version lohnt es sich,
+ihn mit Postfächern der wichtigsten Anbieter laufen zu lassen. Die MX-Erkennung einer eigenen Domain
+lässt sich live mit `TEST_MX_EMAIL=name@domain.de node test/detect.mjs` prüfen.
 
 IMAP-Verbindungen werden pro Account wiederverwendet und nach 5 Minuten Leerlauf geschlossen.
+
+## Versionen
+
+| Version | |
+| --- | --- |
+| 1.1.0 | Zweites Postfach im Installationsdialog, Senden je Postfach getrennt |
+| 1.0.2 | IMAP4rev2 standardmäßig aus (leere Suchergebnisse bei Strato); neueste Mails ohne Suche |
+| 1.0.1 | Leer gelassene Dialogfelder kamen als Platzhalter an und verhinderten die Server-Erkennung |
+| 1.0.0 | Erste Version |
+
+## Lizenz
+
+MIT — siehe [LICENSE](LICENSE).
