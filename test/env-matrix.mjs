@@ -15,8 +15,8 @@ const SERVER = process.env.TEST_SERVER ?? new URL("../build/bundle/server/index.
 const P = (k) => "${user_config." + k + "}";
 
 const ALL_KEYS = [
-  "MAIL_EMAIL", "MAIL_PASSWORD", "MAIL_DISPLAY_NAME", "MAIL_ALLOW_SEND", "MAIL_IMAP_HOST", "MAIL_SMTP_HOST",
-  "MAIL2_EMAIL", "MAIL2_PASSWORD", "MAIL2_DISPLAY_NAME", "MAIL2_ALLOW_SEND", "MAIL2_IMAP_HOST", "MAIL2_SMTP_HOST",
+  "MAIL_EMAIL", "MAIL_PASSWORD", "MAIL_USER", "MAIL_DISPLAY_NAME", "MAIL_ALLOW_SEND", "MAIL_IMAP_HOST", "MAIL_SMTP_HOST",
+  "MAIL2_EMAIL", "MAIL2_PASSWORD", "MAIL2_USER", "MAIL2_DISPLAY_NAME", "MAIL2_ALLOW_SEND", "MAIL2_IMAP_HOST", "MAIL2_SMTP_HOST",
   "MAIL_AUTODETECT_ONLINE",
 ];
 
@@ -52,9 +52,9 @@ async function call(extraEnv, tool = "mail_list_accounts", args = {}) {
 
 // Leere optionale Felder so, wie Claude Desktop sie liefert.
 const leer = {
-  MAIL_DISPLAY_NAME: P("display_name"), MAIL_ALLOW_SEND: P("allow_send"),
+  MAIL_USER: P("username"), MAIL_DISPLAY_NAME: P("display_name"), MAIL_ALLOW_SEND: P("allow_send"),
   MAIL_IMAP_HOST: P("imap_host"), MAIL_SMTP_HOST: P("smtp_host"),
-  MAIL2_EMAIL: P("email_2"), MAIL2_PASSWORD: P("password_2"), MAIL2_DISPLAY_NAME: P("display_name_2"),
+  MAIL2_EMAIL: P("email_2"), MAIL2_PASSWORD: P("password_2"), MAIL2_USER: P("username_2"), MAIL2_DISPLAY_NAME: P("display_name_2"),
   MAIL2_ALLOW_SEND: P("allow_send_2"), MAIL2_IMAP_HOST: P("imap_host_2"), MAIL2_SMTP_HOST: P("smtp_host_2"),
   MAIL_AUTODETECT_ONLINE: P("autodetect_online"),
 };
@@ -72,6 +72,10 @@ const faelle = [
     (r) => r.json?.[0].displayName === "Anna Beispiel"],
   ["Absendername leer bleibt leer", eins, "mail_list_accounts", {},
     (r) => r.json?.[0].displayName === undefined],
+  ["Benutzername leer = Adresse", eins, "mail_list_accounts", {},
+    (r) => r.json?.[0].imap.endsWith(" als anna.beispiel@web.de") && r.json?.[0].smtp.endsWith(" als anna.beispiel@web.de")],
+  ["Eigener Benutzername für IMAP und SMTP", { ...eins, MAIL_USER: "m0123456" }, "mail_list_accounts", {},
+    (r) => r.json?.[0].imap.endsWith(" als m0123456") && r.json?.[0].smtp.endsWith(" als m0123456") && r.json?.[0].email === "anna.beispiel@web.de"],
   ["Senden ohne Freigabe gesperrt", eins, "mail_send", senden,
     (r) => r.text.includes("deaktiviert")],
   ["Senden mit Freigabe versucht es", { ...eins, MAIL_ALLOW_SEND: "true", MAIL_SMTP_HOST: "smtp.invalid.test" }, "mail_send", senden,
@@ -86,6 +90,8 @@ const faelle = [
     (r) => r.json?.[0].name === "anna.beispiel@web.de" && r.json?.[1].name === "kunde@gmx.de"],
   ["Senden je Postfach getrennt", { ...zwei, MAIL2_ALLOW_SEND: "true" }, "mail_list_accounts", {},
     (r) => r.json?.[0].sendenErlaubt === false && r.json?.[1].sendenErlaubt === true],
+  ["Benutzername nur beim zweiten Postfach", { ...zwei, MAIL2_USER: "kunde123" }, "mail_list_accounts", {},
+    (r) => r.json?.[0].imap.endsWith(" als anna.beispiel@web.de") && r.json?.[1].imap.endsWith(" als kunde123")],
   ["Ohne account-Angabe: Rückfrage", zwei, "mail_test_connection", {},
     (r) => r.text.includes("Mehrere Accounts") && r.text.includes("kunde@gmx.de")],
   ["Senden gesperrt gilt fürs richtige Postfach", { ...zwei, MAIL2_ALLOW_SEND: "true" }, "mail_send", { ...senden, account: "anna.beispiel@web.de" },

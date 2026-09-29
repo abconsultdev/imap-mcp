@@ -2,7 +2,7 @@
   "manifest_version": "0.1",
   "name": "imap-mail",
   "display_name": "E-Mail (IMAP & SMTP)",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Verbindet Claude mit einem oder zwei E-Mail-Postfächern über IMAP und SMTP - ohne Umweg über einen Anbieter-Konnektor.",
   "long_description": "Liest, durchsucht und sortiert Mails in jedem IMAP-Postfach und verschickt Antworten über SMTP. Die Server-Einstellungen werden automatisch aus der E-Mail-Adresse ermittelt, in den meisten Fällen genügen Adresse und Passwort. Bis zu zwei Postfächer lassen sich gleichzeitig einrichten. Passwörter werden im Schlüsselbund des Betriebssystems abgelegt, nicht in einer Datei. Alles läuft lokal auf dem eigenen Rechner; Mails gehen ausschließlich an den eigenen Mailserver.",
   "author": {
@@ -20,12 +20,14 @@
       "env": {
         "MAIL_EMAIL": "${user_config.email}",
         "MAIL_PASSWORD": "${user_config.password}",
+        "MAIL_USER": "${user_config.username}",
         "MAIL_DISPLAY_NAME": "${user_config.display_name}",
         "MAIL_ALLOW_SEND": "${user_config.allow_send}",
         "MAIL_IMAP_HOST": "${user_config.imap_host}",
         "MAIL_SMTP_HOST": "${user_config.smtp_host}",
         "MAIL2_EMAIL": "${user_config.email_2}",
         "MAIL2_PASSWORD": "${user_config.password_2}",
+        "MAIL2_USER": "${user_config.username_2}",
         "MAIL2_DISPLAY_NAME": "${user_config.display_name_2}",
         "MAIL2_ALLOW_SEND": "${user_config.allow_send_2}",
         "MAIL2_IMAP_HOST": "${user_config.imap_host_2}",
@@ -47,6 +49,12 @@
       "description": "Das Passwort des Postfachs. Wo möglich ein App-Passwort verwenden (Gmail, iCloud und Yahoo verlangen das sogar). Wird im Schlüsselbund des Systems gespeichert, nicht in einer Datei.",
       "sensitive": true,
       "required": true
+    },
+    "username": {
+      "type": "string",
+      "title": "Benutzername (nur falls abweichend)",
+      "description": "Leer lassen, wenn der Anmeldename die E-Mail-Adresse ist - das ist der Normalfall. Nur ausfüllen, wenn der Anbieter einen eigenen Benutzernamen vergibt, z.B. m0123456 oder anna.beispiel. Gilt für IMAP und SMTP.",
+      "required": false
     },
     "allow_send": {
       "type": "boolean",
@@ -72,6 +80,12 @@
       "title": "Zweites Postfach: Passwort",
       "description": "Passwort des zweiten Postfachs. Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
       "sensitive": true,
+      "required": false
+    },
+    "username_2": {
+      "type": "string",
+      "title": "Zweites Postfach: Benutzername (nur falls abweichend)",
+      "description": "Leer lassen, wenn der Anmeldename die E-Mail-Adresse des zweiten Postfachs ist.",
       "required": false
     },
     "allow_send_2": {

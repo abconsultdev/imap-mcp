@@ -11,7 +11,7 @@ import { searchMessages, fetchParsed, fetchRawSource, formatAddresses, htmlToTex
 import { getTransport, closeAllSmtp } from "./smtp.js";
 import { detectServers, knownProviders } from "./providers.js";
 
-const server = new McpServer({ name: "imap-mcp", version: "1.0.0" });
+const server = new McpServer({ name: "imap-mcp", version: "1.2.0" });
 
 const accountArg = z
   .string()
@@ -92,6 +92,7 @@ server.registerTool(
       const result: Record<string, unknown> = {
         account: acc.name,
         adresse: acc.email,
+        benutzer: acc.imap.user === acc.smtp.user ? acc.imap.user : { imap: acc.imap.user, smtp: acc.smtp.user },
         imapServer: `${acc.imap.host}:${acc.imap.port}`,
         smtpServer: `${acc.smtp.host}:${acc.smtp.port}`,
       };

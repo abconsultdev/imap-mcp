@@ -41,9 +41,10 @@ Herausgeber hinweisen.
 | --- | --- |
 | E-Mail-Adresse | Pflichtfeld |
 | Passwort | Pflichtfeld. Landet im **Schlüsselbund** (macOS) bzw. der **Anmeldeinformationsverwaltung** (Windows), nicht in einer Datei |
+| Benutzername | optional — leer lassen, wenn man sich mit der E-Mail-Adresse anmeldet. Nur ausfüllen, wenn der Anbieter einen eigenen Anmeldenamen vergibt (siehe [unten](#vor-der-einrichtung)) |
 | Senden erlauben | Standardmäßig **aus** — Claude kann dann lesen und Entwürfe anlegen, aber nichts verschicken |
 | Absendername | optional |
-| Zweites Postfach: Adresse, Passwort, Senden, Absendername | optional — leer lassen, wenn nur ein Postfach gebraucht wird |
+| Zweites Postfach: Adresse, Passwort, Benutzername, Senden, Absendername | optional — leer lassen, wenn nur ein Postfach gebraucht wird |
 | Server online nachschlagen | siehe [Server-Erkennung](#wie-die-server-erkennung-funktioniert) |
 | IMAP-/SMTP-Server (je Postfach) | leer lassen, nur nötig, wenn die Erkennung scheitert |
 
@@ -58,6 +59,10 @@ Die meisten Probleme entstehen nicht im Connector, sondern beim Mail-Anbieter:
 - **GMX, Web.de:** IMAP ist standardmäßig aus und muss im Webmail unter Einstellungen freigeschaltet werden.
 - **Microsoft 365 / Outlook:** Viele Organisationen haben die Anmeldung per Passwort abgeschaltet. Dann
   lässt sich das Postfach mit diesem Connector nicht anbinden (siehe [Einschränkungen](#einschränkungen)).
+- **Anmeldename ist nicht die Adresse:** Manche Anbieter und viele Firmenserver vergeben eigene
+  Benutzernamen, etwa `m0123456` bei All-Inkl oder einen Windows-Anmeldenamen bei Exchange. Den dann im
+  Feld **Benutzername** eintragen; er gilt für IMAP und SMTP. Die Server werden trotzdem aus der
+  Adresse erkannt.
 - **Eigene Domain:** Funktioniert in der Regel ohne weitere Angaben, weil der Anbieter über den
   MX-Eintrag der Domain erkannt wird.
 
@@ -151,6 +156,7 @@ Klartext und steht deshalb in `.gitignore`.
 | --- | --- |
 | `name` | Kurzname, den du im Chat benutzt (*„lies die Mails im hauptpostfach"*) |
 | `displayName` | Absendername im From-Header |
+| `imap.user`, `smtp.user` | Anmeldename, meist die Adresse. Weicht er ab, hier eintragen |
 | `allowSend` | `false` = reiner Lesezugriff, `mail_send` verweigert dann den Dienst |
 | `secure` | `true` bei Port 993/465 (direktes TLS), `false` bei 143/587 (STARTTLS) |
 | `allowInvalidCert` | nur für interne Server mit selbstsigniertem Zertifikat |
@@ -182,11 +188,12 @@ Vorrang vor `config.json`.**
 | Variable | |
 | --- | --- |
 | `MAIL_EMAIL`, `MAIL_PASSWORD` | Pflicht |
+| `MAIL_USER` | Anmeldename für IMAP und SMTP, falls er nicht die Adresse ist. Standard: `MAIL_EMAIL` |
 | `MAIL_ALLOW_SEND` | `true` schaltet den Versand frei. **Standard ist aus** |
 | `MAIL_DISPLAY_NAME` | Absendername |
 | `MAIL_IMAP_HOST`, `MAIL_SMTP_HOST` | überschreiben die Erkennung |
 | `MAIL_IMAP_PORT`, `MAIL_SMTP_PORT` | Ports, Standard 993 / 465 |
-| `MAIL2_EMAIL`, `MAIL2_PASSWORD`, `MAIL2_ALLOW_SEND`, `MAIL2_DISPLAY_NAME`, `MAIL2_IMAP_HOST`, `MAIL2_SMTP_HOST`, … | dasselbe für ein zweites Postfach |
+| `MAIL2_EMAIL`, `MAIL2_PASSWORD`, `MAIL2_USER`, `MAIL2_ALLOW_SEND`, `MAIL2_DISPLAY_NAME`, `MAIL2_IMAP_HOST`, `MAIL2_SMTP_HOST`, … | dasselbe für ein zweites Postfach |
 | `MAIL_AUTODETECT_ONLINE` | `false` schaltet MX- und Online-Abfrage ab (gilt für beide) |
 | `MAIL_DOWNLOAD_DIR` | Ordner für Anhänge, Standard `~/Downloads` |
 | `IMAP_MCP_CONFIG` | abweichender Pfad zur `config.json` |
@@ -308,8 +315,10 @@ scheitert. Was tatsächlich erkannt wurde, zeigt `mail_test_connection` unter `s
 
 **`Authentication failed` / `LOGIN failed`**
 
-Passwort falsch oder der Anbieter verlangt ein App-Passwort (Gmail, iCloud, Yahoo) — bei GMX und Web.de
-ist IMAP zusätzlich standardmäßig deaktiviert und muss im Webmail freigeschaltet werden.
+Passwort falsch, der Anbieter verlangt ein App-Passwort (Gmail, iCloud, Yahoo), oder der Anmeldename ist
+nicht die E-Mail-Adresse — dann im Feld **Benutzername** den richtigen eintragen. Welcher Name benutzt
+wurde, zeigt `mail_test_connection` unter `benutzer`. Bei GMX und Web.de
+ist IMAP außerdem standardmäßig deaktiviert und muss im Webmail freigeschaltet werden.
 
 **Senden schlägt mit „Senden ist deaktiviert" fehl**
 
@@ -342,7 +351,7 @@ npm run watch              # während der Entwicklung
 npm run bundle             # build/imap-mail.mcpb bauen, inkl. aller Prüfungen (Weg A)
 node test/unit.mjs         # Helfer + MailComposer (ohne Netzwerk)
 node test/detect.mjs       # Anbieter-Erkennung: Liste, MX-Muster, Autoconfig
-node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 15 Fälle
+node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 18 Fälle
 node test/live.mjs         # gegen das echte Postfach aus config.json, rein lesend
 ```
 
@@ -370,6 +379,7 @@ IMAP-Verbindungen werden pro Account wiederverwendet und nach 5 Minuten Leerlauf
 
 | Version | |
 | --- | --- |
+| 1.2.0 | Eigener Benutzername, falls er nicht der E-Mail-Adresse entspricht |
 | 1.1.0 | Zweites Postfach im Installationsdialog, Senden je Postfach getrennt |
 | 1.0.2 | IMAP4rev2 standardmäßig aus (leere Suchergebnisse bei Strato); neueste Mails ohne Suche |
 | 1.0.1 | Leer gelassene Dialogfelder kamen als Platzhalter an und verhinderten die Server-Erkennung |
