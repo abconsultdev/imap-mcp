@@ -1,0 +1,282 @@
+{
+  "manifest_version": "0.1",
+  "name": "imap-mail-10",
+  "display_name": "E-Mail (IMAP & SMTP) – bis zu 10 Postfächer",
+  "version": "1.3.0",
+  "description": "Verbindet Claude mit bis zu zehn E-Mail-Postfächern über IMAP und SMTP - ohne Umweg über einen Anbieter-Konnektor.",
+  "long_description": "Liest, durchsucht und sortiert Mails in jedem IMAP-Postfach und verschickt Antworten über SMTP. Die Server-Einstellungen werden automatisch aus der E-Mail-Adresse ermittelt, in den meisten Fällen genügen Adresse und Passwort. Bis zu zehn Postfächer lassen sich gleichzeitig einrichten. Passwörter werden im Schlüsselbund des Betriebssystems abgelegt, nicht in einer Datei. Alles läuft lokal auf dem eigenen Rechner; Mails gehen ausschließlich an den eigenen Mailserver.",
+  "author": {
+    "name": "IMAP MCP"
+  },
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {
+        "MAIL_EMAIL": "${user_config.email}",
+        "MAIL_PASSWORD": "${user_config.password}",
+        "MAIL2_EMAIL": "${user_config.email_2}",
+        "MAIL2_PASSWORD": "${user_config.password_2}",
+        "MAIL3_EMAIL": "${user_config.email_3}",
+        "MAIL3_PASSWORD": "${user_config.password_3}",
+        "MAIL4_EMAIL": "${user_config.email_4}",
+        "MAIL4_PASSWORD": "${user_config.password_4}",
+        "MAIL5_EMAIL": "${user_config.email_5}",
+        "MAIL5_PASSWORD": "${user_config.password_5}",
+        "MAIL6_EMAIL": "${user_config.email_6}",
+        "MAIL6_PASSWORD": "${user_config.password_6}",
+        "MAIL7_EMAIL": "${user_config.email_7}",
+        "MAIL7_PASSWORD": "${user_config.password_7}",
+        "MAIL8_EMAIL": "${user_config.email_8}",
+        "MAIL8_PASSWORD": "${user_config.password_8}",
+        "MAIL9_EMAIL": "${user_config.email_9}",
+        "MAIL9_PASSWORD": "${user_config.password_9}",
+        "MAIL10_EMAIL": "${user_config.email_10}",
+        "MAIL10_PASSWORD": "${user_config.password_10}",
+        "MAIL_ALLOW_SEND_FOR": "${user_config.allow_send_for}",
+        "MAIL_DISPLAY_NAMES": "${user_config.display_names}",
+        "MAIL_USERNAMES": "${user_config.usernames}",
+        "MAIL_SERVERS": "${user_config.servers}",
+        "MAIL_AUTODETECT_ONLINE": "${user_config.autodetect_online}"
+      }
+    }
+  },
+  "user_config": {
+    "email": {
+      "type": "string",
+      "title": "Postfach 1: E-Mail-Adresse",
+      "description": "Die vollständige Adresse des Postfachs, z.B. name@meinefirma.de",
+      "required": true
+    },
+    "password": {
+      "type": "string",
+      "title": "Postfach 1: Passwort",
+      "description": "Das Passwort des Postfachs. Wo möglich ein App-Passwort verwenden (Gmail, iCloud und Yahoo verlangen das sogar). Wird im Schlüsselbund des Systems gespeichert, nicht in einer Datei.",
+      "sensitive": true,
+      "required": true
+    },
+    "email_2": {
+      "type": "string",
+      "title": "Postfach 2: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_2": {
+      "type": "string",
+      "title": "Postfach 2: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_3": {
+      "type": "string",
+      "title": "Postfach 3: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_3": {
+      "type": "string",
+      "title": "Postfach 3: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_4": {
+      "type": "string",
+      "title": "Postfach 4: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_4": {
+      "type": "string",
+      "title": "Postfach 4: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_5": {
+      "type": "string",
+      "title": "Postfach 5: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_5": {
+      "type": "string",
+      "title": "Postfach 5: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_6": {
+      "type": "string",
+      "title": "Postfach 6: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_6": {
+      "type": "string",
+      "title": "Postfach 6: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_7": {
+      "type": "string",
+      "title": "Postfach 7: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_7": {
+      "type": "string",
+      "title": "Postfach 7: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_8": {
+      "type": "string",
+      "title": "Postfach 8: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_8": {
+      "type": "string",
+      "title": "Postfach 8: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_9": {
+      "type": "string",
+      "title": "Postfach 9: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_9": {
+      "type": "string",
+      "title": "Postfach 9: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "email_10": {
+      "type": "string",
+      "title": "Postfach 10: E-Mail-Adresse",
+      "description": "Nur ausfüllen, wenn Claude auf ein weiteres Postfach zugreifen soll. Sonst leer lassen.",
+      "required": false
+    },
+    "password_10": {
+      "type": "string",
+      "title": "Postfach 10: Passwort",
+      "description": "Wird ebenfalls im Schlüsselbund des Systems gespeichert.",
+      "sensitive": true,
+      "required": false
+    },
+    "allow_send_for": {
+      "type": "string",
+      "title": "Senden erlauben für",
+      "description": "Adressen der Postfächer, aus denen Claude nach deiner Bestätigung Mails verschicken darf, mit Komma getrennt, z.B. info@firma.de, anna@web.de. Oder „alle“. Leer: Claude kann lesen, suchen, sortieren und Entwürfe anlegen, aber nichts verschicken.",
+      "required": false
+    },
+    "display_names": {
+      "type": "string",
+      "title": "Absendernamen (optional)",
+      "description": "Name, der beim Empfänger im Absender steht, je Postfach: adresse = Name, mehrere mit Semikolon getrennt. Z.B. info@firma.de = Firma GmbH; anna@web.de = Anna Beispiel. Postfächer ohne Eintrag zeigen nur die Adresse.",
+      "required": false
+    },
+    "usernames": {
+      "type": "string",
+      "title": "Abweichende Benutzernamen (optional)",
+      "description": "Nur für Postfächer, deren Anmeldename nicht die E-Mail-Adresse ist: adresse = Benutzername, mehrere mit Semikolon getrennt. Z.B. info@firma.de = m0123456. Gilt für IMAP und SMTP.",
+      "required": false
+    },
+    "servers": {
+      "type": "string",
+      "title": "Server von Hand (leer lassen)",
+      "description": "Leer lassen! Die Server werden automatisch aus der Adresse ermittelt. Nur wenn das nachweislich fehlschlägt: adresse = imap-server, smtp-server, mehrere mit Semikolon getrennt. Z.B. info@firma.de = imap.firma.de, smtp.firma.de. Ein einzelner Server gilt für beides, ein Port lässt sich mit Doppelpunkt anhängen.",
+      "required": false
+    },
+    "autodetect_online": {
+      "type": "boolean",
+      "title": "Server online nachschlagen",
+      "description": "An: unbekannte Anbieter werden über den MX-Eintrag der Domain und Mozillas Autoconfig-Datenbank ermittelt. Dabei wird nur die Domain abgefragt, nie die Adresse oder das Passwort. Aus: nur die eingebaute Anbieterliste.",
+      "default": true,
+      "required": false
+    }
+  },
+  "tools": [
+    {
+      "name": "mail_list_accounts",
+      "description": "Eingerichtete Postfächer anzeigen"
+    },
+    {
+      "name": "mail_test_connection",
+      "description": "IMAP- und SMTP-Anmeldung prüfen"
+    },
+    {
+      "name": "mail_detect_provider",
+      "description": "Server-Einstellungen zu einer Adresse ermitteln"
+    },
+    {
+      "name": "mail_list_mailboxes",
+      "description": "Ordner des Postfachs auflisten"
+    },
+    {
+      "name": "mail_search",
+      "description": "Mails nach Absender, Betreff, Text oder Datum durchsuchen"
+    },
+    {
+      "name": "mail_read",
+      "description": "Eine Mail vollständig lesen"
+    },
+    {
+      "name": "mail_get_raw",
+      "description": "Rohen Quelltext einer Mail anzeigen"
+    },
+    {
+      "name": "mail_save_attachment",
+      "description": "Anhänge speichern"
+    },
+    {
+      "name": "mail_set_flags",
+      "description": "Mails als gelesen oder markiert kennzeichnen"
+    },
+    {
+      "name": "mail_move",
+      "description": "Mails in einen anderen Ordner verschieben"
+    },
+    {
+      "name": "mail_move_to_trash",
+      "description": "Mails in den Papierkorb verschieben"
+    },
+    {
+      "name": "mail_create_draft",
+      "description": "Eine Mail als Entwurf ablegen, ohne zu senden"
+    },
+    {
+      "name": "mail_send",
+      "description": "Eine Mail über SMTP versenden"
+    }
+  ],
+  "keywords": [
+    "email",
+    "imap",
+    "smtp",
+    "mail",
+    "postfach"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32"
+    ],
+    "runtimes": {
+      "node": ">=18.17"
+    }
+  }
+}

@@ -7,8 +7,8 @@ Es gibt zwei Wege:
 
 | | [Weg A: Fertiges Bundle](#weg-a-fertiges-bundle) | [Weg B: Aus dem Quellcode](#weg-b-aus-dem-quellcode) |
 | --- | --- | --- |
-| Für wen | alle, die einfach ihr Postfach anbinden wollen | Entwicklung, mehr als zwei Postfächer, Linux, Claude Code |
-| Postfächer | bis zu zwei | beliebig viele |
+| Für wen | alle, die einfach ihr Postfach anbinden wollen | Entwicklung, mehr als zehn Postfächer, Linux, Claude Code |
+| Postfächer | bis zu zwei, mit dem [Zehner-Paket](#mehr-als-zwei-postfächer-das-zehner-paket) bis zu zehn | beliebig viele |
 | Voraussetzungen | nur Claude Desktop (macOS oder Windows) | Node ≥ 18.17, Terminal |
 | Installation | Datei doppelklicken, Adresse + Passwort eintippen | klonen, bauen, JSON konfigurieren |
 | Server-Einstellungen | automatisch erkannt | automatisch oder von Hand |
@@ -61,7 +61,7 @@ Die meisten Probleme entstehen nicht im Connector, sondern beim Mail-Anbieter:
   lässt sich das Postfach mit diesem Connector nicht anbinden (siehe [Einschränkungen](#einschränkungen)).
 - **Anmeldename ist nicht die Adresse:** Manche Anbieter und viele Firmenserver vergeben eigene
   Benutzernamen, etwa `m0123456` bei All-Inkl oder einen Windows-Anmeldenamen bei Exchange. Den dann im
-  Feld **Benutzername** eintragen; er gilt für IMAP und SMTP. Die Server werden trotzdem aus der
+  Feld **Benutzername** eintragen (im Zehner-Paket: **Abweichende Benutzernamen**); er gilt für IMAP und SMTP. Die Server werden trotzdem aus der
   Adresse erkannt.
 - **Eigene Domain:** Funktioniert in der Regel ohne weitere Angaben, weil der Anbieter über den
   MX-Eintrag der Domain erkannt wird.
@@ -94,7 +94,34 @@ diese Angabe, kommt eine Rückfrage statt einer stillen Annahme — das zählt v
 keine Mail vom falschen Absender rausgeht. Im Chat reicht es, das Postfach beim Namen zu nennen:
 *„Was ist heute im Geschäftspostfach reingekommen?"*
 
-Mehr als zwei gehen über das Bundle nicht, weil das Manifest-Format keine beliebig langen Feldlisten
+## Mehr als zwei Postfächer: das Zehner-Paket
+
+Für bis zu zehn Postfächer gibt es ein eigenes Paket mit demselben Funktionsumfang:
+**[`imap-mail-10.mcpb` herunterladen](https://github.com/abconsultdev/imap-mcp/releases/latest/download/imap-mail-10.mcpb)**.
+
+Zehn Postfächer mit allen Einzelfeldern ergäben einen Dialog mit über siebzig Feldern. Das Zehner-Paket
+fragt deshalb je Postfach nur Adresse und Passwort ab. Alles, was man selten braucht, steht darunter in
+wenigen gemeinsamen Feldern, in denen jeder Eintrag mit der Adresse des Postfachs beginnt:
+
+| Feld | |
+| --- | --- |
+| Postfach 1: E-Mail-Adresse, Passwort | Pflichtfelder |
+| Postfach 2–10: E-Mail-Adresse, Passwort | optional — leer lassen, was nicht gebraucht wird |
+| Senden erlauben für | Adressen mit Komma getrennt, z.B. `info@firma.de, anna@web.de`, oder `alle`. **Leer = aus** |
+| Absendernamen | optional: `info@firma.de = Firma GmbH; anna@web.de = Anna Beispiel` |
+| Abweichende Benutzernamen | optional, nur wenn der Anmeldename nicht die Adresse ist: `info@firma.de = m0123456` |
+| Server von Hand | leer lassen, nur nötig, wenn die Erkennung scheitert: `info@firma.de = imap.firma.de, smtp.firma.de` |
+| Server online nachschlagen | wie im Standard-Paket |
+
+In den gemeinsamen Feldern trennt ein **Semikolon** die Postfächer, so dürfen Namen Kommas enthalten
+(`anna@web.de = Beispiel, Anna`). Groß- und Kleinschreibung der Adresse spielt keine Rolle. Steht dort
+eine Adresse, die oben nicht eingetragen ist, startet der Connector nicht, sondern meldet genau diese
+Zeile — ein Tippfehler bleibt also nicht unbemerkt.
+
+**Nur eines der beiden Pakete installieren.** Claude Desktop führt sie als getrennte Erweiterungen;
+beide zugleich würden jedes Werkzeug doppelt anbieten. Wer wechselt, deinstalliert das alte Paket vorher.
+
+Mehr als zehn gehen über ein Bundle nicht, weil das Manifest-Format keine beliebig langen Feldlisten
 kennt. Über `config.json` (Weg B) ist die Zahl unbegrenzt.
 
 ## Wie die Server-Erkennung funktioniert
@@ -188,15 +215,18 @@ Vorrang vor `config.json`.**
 | Variable | |
 | --- | --- |
 | `MAIL_EMAIL`, `MAIL_PASSWORD` | Pflicht |
-| `MAIL_USER` | Anmeldename für IMAP und SMTP, falls er nicht die Adresse ist. Standard: `MAIL_EMAIL` |
-| `MAIL_ALLOW_SEND` | `true` schaltet den Versand frei. **Standard ist aus** |
-| `MAIL_DISPLAY_NAME` | Absendername |
-| `MAIL_IMAP_HOST`, `MAIL_SMTP_HOST` | überschreiben die Erkennung |
-| `MAIL_IMAP_PORT`, `MAIL_SMTP_PORT` | Ports, Standard 993 / 465 |
-| `MAIL2_EMAIL`, `MAIL2_PASSWORD`, `MAIL2_USER`, `MAIL2_ALLOW_SEND`, `MAIL2_DISPLAY_NAME`, `MAIL2_IMAP_HOST`, `MAIL2_SMTP_HOST`, … | dasselbe für ein zweites Postfach |
-| `MAIL_AUTODETECT_ONLINE` | `false` schaltet MX- und Online-Abfrage ab (gilt für beide) |
+| `MAIL2_EMAIL`, `MAIL2_PASSWORD` … `MAIL10_EMAIL`, `MAIL10_PASSWORD` | weitere Postfächer |
+| `MAIL_ALLOW_SEND_FOR` | Adressen, die senden dürfen, mit Komma getrennt, oder `alle`. **Standard: keine** |
+| `MAIL_DISPLAY_NAMES` | `adresse = Name; adresse = Name` |
+| `MAIL_USERNAMES` | `adresse = Benutzername; …`, nur wo der Anmeldename nicht die Adresse ist |
+| `MAIL_SERVERS` | `adresse = imap-server, smtp-server; …`, überschreibt die Erkennung. Ein Server gilt für beides, `:port` ist erlaubt |
+| `MAIL_AUTODETECT_ONLINE` | `false` schaltet MX- und Online-Abfrage ab (gilt für alle) |
 | `MAIL_DOWNLOAD_DIR` | Ordner für Anhänge, Standard `~/Downloads` |
 | `IMAP_MCP_CONFIG` | abweichender Pfad zur `config.json` |
+
+Einzeln je Postfach gehen weiterhin `MAIL_USER`, `MAIL_DISPLAY_NAME`, `MAIL_ALLOW_SEND`, `MAIL_IMAP_HOST`,
+`MAIL_SMTP_HOST`, `MAIL_IMAP_PORT`, `MAIL_SMTP_PORT` und dasselbe mit `MAIL2_` bis `MAIL10_`. Sie haben Vorrang
+vor den gemeinsamen Variablen; fürs Senden genügt eine der beiden Freigaben.
 
 Werte, die noch einen unersetzten Platzhalter der Form `${...}` enthalten, werden als *nicht gesetzt*
 behandelt. Die älteren Namen `IMAP_HOST`, `IMAP_USER`, `IMAP_PASS`, `IMAP_PORT`, `SMTP_HOST`,
@@ -310,25 +340,27 @@ Ob die Suche gegen ein konkretes Postfach funktioniert, prüft `node test/live.m
 **Die Server-Felder im Installationsdialog bleiben leer — ist das richtig?**
 
 Ja. Der Dialog füllt nichts automatisch aus; die Erkennung passiert erst beim Start des Servers, aus
-der eingegebenen Adresse. Die Host-Felder sind nur ein Notausgang für den Fall, dass die Erkennung
+der eingegebenen Adresse. Die Server-Felder sind nur ein Notausgang für den Fall, dass die Erkennung
 scheitert. Was tatsächlich erkannt wurde, zeigt `mail_test_connection` unter `serverErkanntVia`.
 
 **`Authentication failed` / `LOGIN failed`**
 
 Passwort falsch, der Anbieter verlangt ein App-Passwort (Gmail, iCloud, Yahoo), oder der Anmeldename ist
-nicht die E-Mail-Adresse — dann im Feld **Benutzername** den richtigen eintragen. Welcher Name benutzt
+nicht die E-Mail-Adresse — dann im Feld **Benutzername** (Zehner-Paket: **Abweichende Benutzernamen**)
+den richtigen eintragen. Welcher Name benutzt
 wurde, zeigt `mail_test_connection` unter `benutzer`. Bei GMX und Web.de
 ist IMAP außerdem standardmäßig deaktiviert und muss im Webmail freigeschaltet werden.
 
 **Senden schlägt mit „Senden ist deaktiviert" fehl**
 
-Beabsichtigt. Im Installationsdialog den Haken „Senden erlauben" setzen, in `config.json`
-`"allowSend": true`, per Umgebungsvariable `MAIL_ALLOW_SEND=true`.
+Beabsichtigt. Im Installationsdialog den Haken „Senden erlauben" setzen (Zehner-Paket: die Adresse unter
+„Senden erlauben für" eintragen), in `config.json` `"allowSend": true`, per Umgebungsvariable
+`MAIL_ALLOW_SEND=true` oder `MAIL_ALLOW_SEND_FOR=adresse`.
 
 **Falscher Server erkannt**
 
 `mail_detect_provider` mit der Adresse aufrufen — die Antwort zeigt, aus welcher Quelle die Werte
-stammen. Notfalls IMAP- und SMTP-Server im Installationsdialog von Hand eintragen.
+stammen. Notfalls die Server im Installationsdialog von Hand eintragen.
 
 **`getaddrinfo ENOTFOUND ${user_config.imap_host}`**
 
@@ -348,12 +380,17 @@ Tritt nur mit Versionen vor 1.0.1 auf. Alte Erweiterung deinstallieren, aktuelle
 ```bash
 npm run build              # nach dist/ kompilieren (Weg B)
 npm run watch              # während der Entwicklung
-npm run bundle             # build/imap-mail.mcpb bauen, inkl. aller Prüfungen (Weg A)
+npm run bundle             # build/imap-mail.mcpb und imap-mail-10.mcpb bauen, inkl. aller Prüfungen (Weg A)
 node test/unit.mjs         # Helfer + MailComposer (ohne Netzwerk)
 node test/detect.mjs       # Anbieter-Erkennung: Liste, MX-Muster, Autoconfig
-node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 18 Fälle
+node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 35 Fälle
 node test/live.mjs         # gegen das echte Postfach aus config.json, rein lesend
 ```
+
+**Zwei Pakete, ein Server:** `imap-mail.mcpb` und `imap-mail-10.mcpb` enthalten denselben Server und
+unterscheiden sich nur im Manifest (`manifest.json` bzw. `manifest-10.json`), also im Installationsdialog.
+Der Server versteht beide Arten von Feldern. Die Konfigurationsmatrix liest die Felder direkt aus
+beiden Manifesten.
 
 **Das Bundle** wird mit esbuild zu einer einzigen JavaScript-Datei gebündelt: vier Dateien statt rund
 5000, knapp 1 MB statt 6 MB. Ohne Bündelung lägen Typdeklarationen, Sourcemaps und die HTTP-Transporte
@@ -379,6 +416,7 @@ IMAP-Verbindungen werden pro Account wiederverwendet und nach 5 Minuten Leerlauf
 
 | Version | |
 | --- | --- |
+| 1.3.0 | Zusätzliches Zehner-Paket `imap-mail-10.mcpb`: bis zu zehn Postfächer, Senden, Absendernamen, Benutzernamen und Server in gemeinsamen Feldern. Das Standard-Paket bleibt unverändert |
 | 1.2.0 | Eigener Benutzername, falls er nicht der E-Mail-Adresse entspricht |
 | 1.1.0 | Zweites Postfach im Installationsdialog, Senden je Postfach getrennt |
 | 1.0.2 | IMAP4rev2 standardmäßig aus (leere Suchergebnisse bei Strato); neueste Mails ohne Suche |

@@ -2,7 +2,7 @@
   "manifest_version": "0.1",
   "name": "imap-mail",
   "display_name": "E-Mail (IMAP & SMTP)",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Verbindet Claude mit einem oder zwei E-Mail-Postfächern über IMAP und SMTP - ohne Umweg über einen Anbieter-Konnektor.",
   "long_description": "Liest, durchsucht und sortiert Mails in jedem IMAP-Postfach und verschickt Antworten über SMTP. Die Server-Einstellungen werden automatisch aus der E-Mail-Adresse ermittelt, in den meisten Fällen genügen Adresse und Passwort. Bis zu zwei Postfächer lassen sich gleichzeitig einrichten. Passwörter werden im Schlüsselbund des Betriebssystems abgelegt, nicht in einer Datei. Alles läuft lokal auf dem eigenen Rechner; Mails gehen ausschließlich an den eigenen Mailserver.",
   "author": {

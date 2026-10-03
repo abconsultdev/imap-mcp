@@ -79,20 +79,142 @@ function candidatePaths(): string[] {
 }
 
 /**
- * Ein Postfach-Platz in den Umgebungsvariablen. Platz 1 nutzt MAIL_*, Platz 2
- * MAIL2_*. Die älteren Namen (IMAP_HOST, IMAP_PASS, ...) gelten nur für Platz 1.
+ * Ein Postfach-Platz in den Umgebungsvariablen. Platz 1 nutzt MAIL_*, die
+ * übrigen MAIL2_* bis MAIL10_*. Die älteren Namen (IMAP_HOST, IMAP_PASS, ...)
+ * gelten nur für Platz 1.
  */
 interface EnvSlot {
-  prefix: "MAIL_" | "MAIL2_";
+  nummer: number;
+  prefix: string;
   legacy: boolean;
 }
 
-const SLOTS: EnvSlot[] = [
-  { prefix: "MAIL_", legacy: true },
-  { prefix: "MAIL2_", legacy: false },
-];
+/** So viele Postfächer bietet der Installationsdialog des Bundles an. */
+export const MAX_ENV_ACCOUNTS = 10;
 
-async function accountFromEnv({ prefix, legacy }: EnvSlot, online: boolean): Promise<Account | null> {
+const SLOTS: EnvSlot[] = Array.from({ length: MAX_ENV_ACCOUNTS }, (_, i) => ({
+  nummer: i + 1,
+  prefix: i === 0 ? "MAIL_" : `MAIL${i + 1}_`,
+  legacy: i === 0,
+}));
+
+interface HostPort {
+  host: string;
+  port?: number;
+}
+
+/**
+ * Einstellungen, die im Installationsdialog nicht je Postfach, sondern in je
+ * einem gemeinsamen Textfeld stehen - sonst bräuchten zehn Postfächer rund
+ * siebzig Felder. Schlüssel ist die Adresse in Kleinbuchstaben.
+ */
+interface Sammelfelder {
+  senden: Set<string> | "alle";
+  absendernamen: Map<string, string>;
+  benutzernamen: Map<string, string>;
+  server: Map<string, { imap: HostPort; smtp: HostPort }>;
+}
+
+/** Titel im Installationsdialog und Variablenname - für verständliche Fehlermeldungen. */
+const FELD = {
+  senden: "„Senden erlauben für“ (MAIL_ALLOW_SEND_FOR)",
+  absendernamen: "„Absendernamen“ (MAIL_DISPLAY_NAMES)",
+  benutzernamen: "„Abweichende Benutzernamen“ (MAIL_USERNAMES)",
+  server: "„Server von Hand“ (MAIL_SERVERS)",
+};
+
+function adressListe(raw: string | undefined): Set<string> | "alle" {
+  if (raw && ["alle", "all", "*"].includes(raw.toLowerCase())) return "alle";
+  const set = new Set<string>();
+  for (const teil of (raw ?? "").split(/[,;\s]+/)) {
+    if (!teil) continue;
+    if (!teil.includes("@")) {
+      throw new Error(
+        `Im Feld ${FELD.senden} ist „${teil}“ keine E-Mail-Adresse. Erwartet: Adressen mit Komma getrennt, oder „alle“.`
+      );
+    }
+    set.add(teil.toLowerCase());
+  }
+  return set;
+}
+
+/** "adresse = wert; adresse = wert" */
+function zuordnungen(feld: string, raw: string | undefined): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const teil of (raw ?? "").split(/[;\n]/)) {
+    const eintrag = teil.trim();
+    if (!eintrag) continue;
+    const i = eintrag.indexOf("=");
+    const adresse = i < 0 ? "" : eintrag.slice(0, i).trim().toLowerCase();
+    const wert = i < 0 ? "" : eintrag.slice(i + 1).trim();
+    if (!adresse.includes("@") || !wert) {
+      throw new Error(
+        `Im Feld ${feld} ist „${eintrag}“ nicht lesbar. Erwartet: adresse = wert, mehrere mit Semikolon getrennt, ` +
+          `z.B. „info@firma.de = Firma GmbH; anna@web.de = Anna“.`
+      );
+    }
+    if (map.has(adresse)) throw new Error(`Im Feld ${feld} steht ${adresse} doppelt.`);
+    map.set(adresse, wert);
+  }
+  return map;
+}
+
+function hostPort(text: string): HostPort {
+  const m = /^([^:\s]+):(\d+)$/.exec(text);
+  // Unlesbares geht unverändert weiter; validate() meldet es dann mit Hinweis.
+  return m ? { host: m[1], port: Number(m[2]) } : { host: text };
+}
+
+/** Wert "imap.x.de, smtp.x.de" oder nur "mail.x.de" für beide, jeweils optional mit :port. */
+function serverZuordnungen(raw: string | undefined): Sammelfelder["server"] {
+  const map: Sammelfelder["server"] = new Map();
+  for (const [adresse, wert] of zuordnungen(FELD.server, raw)) {
+    const hosts = wert.split(",").map((h) => h.trim()).filter(Boolean);
+    if (hosts.length > 2) {
+      throw new Error(
+        `Im Feld ${FELD.server} stehen für ${adresse} mehr als zwei Server. Erwartet: „imap-server, smtp-server“.`
+      );
+    }
+    map.set(adresse, { imap: hostPort(hosts[0]), smtp: hostPort(hosts[1] ?? hosts[0]) });
+  }
+  return map;
+}
+
+function sammelfelder(): Sammelfelder {
+  return {
+    senden: adressListe(env("MAIL_ALLOW_SEND_FOR")),
+    absendernamen: zuordnungen(FELD.absendernamen, env("MAIL_DISPLAY_NAMES")),
+    benutzernamen: zuordnungen(FELD.benutzernamen, env("MAIL_USERNAMES")),
+    server: serverZuordnungen(env("MAIL_SERVERS")),
+  };
+}
+
+/** Jede Adresse in den Sammelfeldern muss zu einem eingerichteten Postfach gehören - sonst ist es ein Tippfehler. */
+function pruefeSammelfelder(s: Sammelfelder, accounts: Account[]): void {
+  const eingerichtet = new Set(accounts.map((a) => a.email.toLowerCase()));
+  const felder: Array<[string, Iterable<string>]> = [
+    [FELD.senden, s.senden === "alle" ? [] : s.senden],
+    [FELD.absendernamen, s.absendernamen.keys()],
+    [FELD.benutzernamen, s.benutzernamen.keys()],
+    [FELD.server, s.server.keys()],
+  ];
+  for (const [feld, adressen] of felder) {
+    for (const adresse of adressen) {
+      if (!eingerichtet.has(adresse)) {
+        throw new Error(
+          `Im Feld ${feld} steht ${adresse}, das ist aber keins der eingerichteten Postfächer ` +
+            `(${[...eingerichtet].join(", ")}). Tippfehler?`
+        );
+      }
+    }
+  }
+}
+
+async function accountFromEnv(
+  { nummer, prefix, legacy }: EnvSlot,
+  sammel: Sammelfelder,
+  online: boolean
+): Promise<Account | null> {
   const v = (key: string, legacyKey?: string) => env(prefix + key) ?? (legacy && legacyKey ? env(legacyKey) : undefined);
 
   const email = v("EMAIL", "IMAP_EMAIL");
@@ -102,15 +224,17 @@ async function accountFromEnv({ prefix, legacy }: EnvSlot, online: boolean): Pro
   if (!email && !password && !legacyHost) return null;
   if (!email || !password) {
     const fehlt = !email ? `die E-Mail-Adresse (${prefix}EMAIL)` : `das Passwort (${prefix}PASSWORD)`;
-    const platz = prefix === "MAIL_" ? "erste" : "zweite";
     throw new Error(
-      `Für das ${platz} Postfach fehlt ${fehlt}. In den Einstellungen der Erweiterung entweder ` +
+      `Für Postfach ${nummer} fehlt ${fehlt}. In den Einstellungen der Erweiterung entweder ` +
         `Adresse und Passwort ausfüllen oder beides leer lassen.`
     );
   }
 
-  const imapHostOverride = v("IMAP_HOST") ?? legacyHost;
-  const smtpHostOverride = v("SMTP_HOST", "SMTP_HOST");
+  // Einzelvariablen (MAIL3_IMAP_HOST, ...) gehen vor den Sammelfeldern.
+  const key = email.toLowerCase();
+  const server = sammel.server.get(key);
+  const imapHostOverride = v("IMAP_HOST") ?? legacyHost ?? server?.imap.host;
+  const smtpHostOverride = v("SMTP_HOST", "SMTP_HOST") ?? server?.smtp.host;
 
   let erkennung: DetectedServers | undefined;
   if (!imapHostOverride || !smtpHostOverride) {
@@ -119,18 +243,19 @@ async function accountFromEnv({ prefix, legacy }: EnvSlot, online: boolean): Pro
 
   const imapHost = imapHostOverride ?? erkennung!.imap.host;
   const smtpHost = smtpHostOverride ?? erkennung!.smtp.host;
-  const imapPort = Number(v("IMAP_PORT", "IMAP_PORT") ?? erkennung?.imap.port ?? 993);
-  const smtpPort = Number(v("SMTP_PORT", "SMTP_PORT") ?? erkennung?.smtp.port ?? 465);
-  const user = v("USER", "IMAP_USER") ?? email;
+  const imapPort = Number(v("IMAP_PORT", "IMAP_PORT") ?? server?.imap.port ?? erkennung?.imap.port ?? 993);
+  const smtpPort = Number(v("SMTP_PORT", "SMTP_PORT") ?? server?.smtp.port ?? erkennung?.smtp.port ?? 465);
+  const user = v("USER", "IMAP_USER") ?? sammel.benutzernamen.get(key) ?? email;
+  const sendenFreigegeben = sammel.senden === "alle" || sammel.senden.has(key);
 
   return {
     // Die Adresse als Name: eindeutig, und Claude wie Nutzer wissen sofort,
     // welches Postfach gemeint ist.
     name: v("ACCOUNT_NAME", "IMAP_ACCOUNT_NAME") ?? email,
     email,
-    displayName: v("DISPLAY_NAME", "IMAP_DISPLAY_NAME"),
+    displayName: v("DISPLAY_NAME", "IMAP_DISPLAY_NAME") ?? sammel.absendernamen.get(key),
     // Sicherheitshalber aus: Senden muss ausdrücklich freigegeben werden.
-    allowSend: bool(v("ALLOW_SEND"), false),
+    allowSend: bool(v("ALLOW_SEND"), false) || sendenFreigegeben,
     imap: { host: imapHost, port: imapPort, secure: imapPort !== 143, user, pass: password },
     smtp: {
       host: smtpHost,
@@ -150,9 +275,11 @@ async function accountFromEnv({ prefix, legacy }: EnvSlot, online: boolean): Pro
  */
 async function fromEnvVars(): Promise<Config | null> {
   const online = bool(env("MAIL_AUTODETECT_ONLINE"), true);
-  const found = await Promise.all(SLOTS.map((slot) => accountFromEnv(slot, online)));
+  const sammel = sammelfelder();
+  const found = await Promise.all(SLOTS.map((slot) => accountFromEnv(slot, sammel, online)));
   const accounts = found.filter((a): a is Account => a !== null);
   if (accounts.length === 0) return null;
+  pruefeSammelfelder(sammel, accounts);
 
   return {
     // Ohne Angabe der Downloads-Ordner des Nutzers - das Bundle selbst liegt in

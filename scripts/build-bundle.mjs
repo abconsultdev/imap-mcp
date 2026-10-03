@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 /**
- * Baut das .mcpb-Bundle für Claude Desktop.
+ * Baut die .mcpb-Bundles für Claude Desktop. Beide Varianten enthalten denselben
+ * Server und unterscheiden sich nur im Manifest, also im Installationsdialog:
+ *
+ *   imap-mail.mcpb      manifest.json      bis zu zwei Postfächer, alles je Postfach
+ *   imap-mail-10.mcpb   manifest-10.json   bis zu zehn, Sonderfälle in Sammelfeldern
  *
  *   node scripts/build-bundle.mjs           bauen und prüfen
  *   node scripts/build-bundle.mjs --skip-checks   nur bauen
@@ -74,17 +78,26 @@ if (!skipChecks) {
   await rm(probe, { force: true });
 }
 
-schritt("Manifest übernehmen und packen");
+schritt("Manifeste übernehmen und packen");
 const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-const manifest = JSON.parse(await readFile(join(root, "manifest.json"), "utf8"));
-manifest.version = pkg.version;
-await writeFile(join(stage, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 for (const extra of ["README.md", "icon.png"]) {
   if (existsSync(join(root, extra))) await cp(join(root, extra), join(stage, extra));
 }
-run("npx", ["mcpb", "validate", join(stage, "manifest.json")]);
-run("npx", ["mcpb", "pack", stage, join(buildDir, "imap-mail.mcpb")]);
+const VARIANTEN = [
+  { manifest: "manifest.json", datei: "imap-mail.mcpb" },
+  { manifest: "manifest-10.json", datei: "imap-mail-10.mcpb" },
+];
+for (const { manifest: quelle, datei } of VARIANTEN) {
+  const manifest = JSON.parse(await readFile(join(root, quelle), "utf8"));
+  manifest.version = pkg.version;
+  await writeFile(join(stage, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+  run("npx", ["mcpb", "validate", join(stage, "manifest.json")]);
+  run("npx", ["mcpb", "pack", stage, join(buildDir, datei)]);
+}
 
-const { size } = await stat(join(buildDir, "imap-mail.mcpb"));
-console.log(`\nFertig: build/imap-mail.mcpb (${(size / 1024 / 1024).toFixed(1)} MB)`);
+console.log("\nFertig:");
+for (const { datei } of VARIANTEN) {
+  const { size } = await stat(join(buildDir, datei));
+  console.log(`  build/${datei} (${(size / 1024 / 1024).toFixed(1)} MB)`);
+}
 console.log("Zum Testen per Doppelklick installieren oder in das Claude-Desktop-Fenster ziehen.");
