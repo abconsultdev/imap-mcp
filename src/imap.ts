@@ -33,6 +33,21 @@ function scheduleClose(key: string, entry: Pooled): void {
   entry.timer.unref?.();
 }
 
+/**
+ * Hängt bei einer abgelehnten Anmeldung den Hinweis zum Anbieter an - sonst
+ * bleibt etwa bei Hotmail nur ein rätselhaftes "Login disabled" stehen.
+ */
+export function mitAnbieterHinweis(err: unknown, account: Account): unknown {
+  const hinweis = account.erkennung?.hinweis;
+  if (!hinweis || !(err instanceof Error)) return err;
+  const e = err as Error & { authenticationFailed?: boolean; responseText?: string; code?: string };
+  const text = `${e.message} ${e.responseText ?? ""}`;
+  if (!e.authenticationFailed && e.code !== "EAUTH" && !/login|auth/i.test(text)) return err;
+  if (e.responseText && !e.message.includes(e.responseText)) e.message += ` (${e.responseText})`;
+  e.message += ` - ${hinweis}`;
+  return e;
+}
+
 /** Führt fn mit einer verbundenen IMAP-Session aus. Verbindungen werden wiederverwendet. */
 export async function withImap<T>(account: Account, fn: (client: ImapFlow) => Promise<T>): Promise<T> {
   const key = account.name;
@@ -53,8 +68,12 @@ export async function withImap<T>(account: Account, fn: (client: ImapFlow) => Pr
         pool.delete(key);
       }
     });
-    await client.connect();
-    entry = { client, timer: setTimeout(() => {}, 0) };
+    try {
+      await client.connect();
+    } catch (err) {
+      throw mitAnbieterHinweis(err, account);
+    }
+    entry ={ client, timer: setTimeout(() => {}, 0) };
     pool.set(key, entry);
   }
 

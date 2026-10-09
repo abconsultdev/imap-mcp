@@ -40,6 +40,11 @@ for (const [mx, anbieter, imap] of [
   const d = serversForMxHost(mx);
   pruefe(mx, d?.anbieter === anbieter && d?.imap.host === imap, d ? `${d.anbieter} -> ${d.imap.host}` : "nicht erkannt");
 }
+// Private Microsoft-Konten: erkannt, aber mit dem Hinweis, dass Passwort-Anmeldung nicht geht.
+for (const mail of ["name@hotmail.com", "name@outlook.de", "name@live.com"]) {
+  const d = await detectServers(mail, false);
+  pruefe(`${mail} (privates Microsoft-Konto)`, d.anbieter?.includes("privates Microsoft-Konto") && d.hinweis?.includes("OAuth2"), d.anbieter ?? "nicht erkannt");
+}
 // Muster dürfen nicht zu großzügig sein - "strato.de" als Teil eines anderen Namens zählt nicht.
 pruefe("nicht-strato.dex.example (kein Treffer)", serversForMxHost("mx.nicht-strato.dex.example") === null);
 pruefe("xrzone.de (kein Treffer)", serversForMxHost("xrzone.de") === null);

@@ -57,8 +57,12 @@ Die meisten Probleme entstehen nicht im Connector, sondern beim Mail-Anbieter:
 - **Gmail, iCloud, Yahoo:** Das normale Passwort wird abgelehnt. Nötig ist ein App-Passwort aus den
   Kontoeinstellungen, bei Gmail zusätzlich aktivierte Zwei-Faktor-Anmeldung.
 - **GMX, Web.de:** IMAP ist standardmäßig aus und muss im Webmail unter Einstellungen freigeschaltet werden.
-- **Microsoft 365 / Outlook:** Viele Organisationen haben die Anmeldung per Passwort abgeschaltet. Dann
-  lässt sich das Postfach mit diesem Connector nicht anbinden (siehe [Einschränkungen](#einschränkungen)).
+- **Hotmail, Outlook.com, Live, MSN: werden nicht unterstützt.** Microsoft lässt bei privaten Konten seit
+  September 2024 keine Anmeldung per Passwort mehr zu, auch nicht mit App-Passwort, sondern nur noch
+  OAuth2. Daran ändert auch der Schalter „IMAP erlauben“ im Microsoft-Konto nichts; der Server antwortet
+  mit „LOGIN failed“ bzw. „Login disabled“. Ausweg: die Mails an ein anderes Postfach weiterleiten.
+- **Microsoft 365 (Firmenkonten):** Viele Organisationen haben die Anmeldung per Passwort ebenfalls
+  abgeschaltet. Dann lässt sich das Postfach mit diesem Connector nicht anbinden (siehe [Einschränkungen](#einschränkungen)).
 - **Anmeldename ist nicht die Adresse:** Manche Anbieter und viele Firmenserver vergeben eigene
   Benutzernamen, etwa `m0123456` bei All-Inkl oder einen Windows-Anmeldenamen bei Exchange. Den dann im
   Feld **Benutzername** eintragen (im Zehner-Paket: **Abweichende Benutzernamen**); er gilt für IMAP und SMTP. Die Server werden trotzdem aus der
@@ -199,7 +203,8 @@ verlangt jedes Tool den Parameter `account`.
 | Anbieter | IMAP | SMTP | Hinweis |
 | --- | --- | --- | --- |
 | Gmail / Workspace | `imap.gmail.com:993` | `smtp.gmail.com:465` | App-Passwort nötig (2FA erforderlich) |
-| Microsoft 365 / Outlook | `outlook.office365.com:993` | `smtp.office365.com:587` (`secure: false`) | Passwort-Anmeldung oft gesperrt, siehe Einschränkungen |
+| Microsoft 365 | `outlook.office365.com:993` | `smtp.office365.com:587` (`secure: false`) | Passwort-Anmeldung oft gesperrt, siehe Einschränkungen |
+| Hotmail / Outlook.com | — | — | nicht unterstützt, nur OAuth2 möglich |
 | IONOS | `imap.ionos.de:993` | `smtp.ionos.de:465` | |
 | Strato | `imap.strato.de:993` | `smtp.strato.de:465` | |
 | All-Inkl | `<server>.kasserver.com:993` | `<server>.kasserver.com:465` | |
@@ -369,7 +374,12 @@ Tritt nur mit Versionen vor 1.0.1 auf. Alte Erweiterung deinstallieren, aktuelle
 ## Einschränkungen
 
 - **Nur Passwort-Authentifizierung.** Kein OAuth2/XOAUTH2. Postfächer, bei denen der Anbieter die
-  Passwort-Anmeldung abgeschaltet hat (viele Microsoft-365-Organisationen), lassen sich damit nicht anbinden.
+  Passwort-Anmeldung abgeschaltet hat, lassen sich damit nicht anbinden. Das betrifft **alle privaten
+  Microsoft-Konten** (Hotmail, Outlook.com, Live, MSN; seit September 2024) und viele Microsoft-365-Organisationen.
+  Ein Wechsel zu Microsoft 365 hilft nicht: Beim Umzug auf ein **Business-Konto** wird die Hotmail-Adresse
+  nicht übernommen, es entsteht eine neue `…onmicrosoft.com`-Adresse. Ein **persönliches** Microsoft-365-Abo
+  behält die Adresse zwar, bleibt aber ein privates Microsoft-Konto — es lässt sich weder mit diesem
+  Connector anbinden noch über die Microsoft-365-Connectoren von Claude oder ChatGPT.
 - Die Volltextsuche macht der IMAP-Server, nicht dieser Connector — wie gut `body`/`text` funktioniert,
   hängt vom Anbieter ab.
 - `mail_search` holt Kopfdaten für bis zu 200 Treffer pro Aufruf.
@@ -416,6 +426,7 @@ IMAP-Verbindungen werden pro Account wiederverwendet und nach 5 Minuten Leerlauf
 
 | Version | |
 | --- | --- |
+| 1.3.1 | Klarer Hinweis, dass Hotmail, Outlook.com, Live und MSN nicht unterstützt werden (Microsoft erlaubt dort nur noch OAuth2) |
 | 1.3.0 | Zusätzliches Zehner-Paket `imap-mail-10.mcpb`: bis zu zehn Postfächer, Senden, Absendernamen, Benutzernamen und Server in gemeinsamen Feldern. Das Standard-Paket bleibt unverändert |
 | 1.2.0 | Eigener Benutzername, falls er nicht der E-Mail-Adresse entspricht |
 | 1.1.0 | Zweites Postfach im Installationsdialog, Senden je Postfach getrennt |

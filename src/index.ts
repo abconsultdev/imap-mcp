@@ -6,12 +6,12 @@ import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import MailComposer from "nodemailer/lib/mail-composer/index.js";
 import { loadConfig, getAccount, fromHeader, type Account } from "./config.js";
-import { withImap, listMailboxes, resolveSpecialMailbox, closeAllImap } from "./imap.js";
+import { withImap, listMailboxes, resolveSpecialMailbox, closeAllImap, mitAnbieterHinweis } from "./imap.js";
 import { searchMessages, fetchParsed, fetchRawSource, formatAddresses, htmlToText, truncate } from "./mail.js";
 import { getTransport, closeAllSmtp } from "./smtp.js";
 import { detectServers, knownProviders } from "./providers.js";
 
-const server = new McpServer({ name: "imap-mcp", version: "1.3.0" });
+const server = new McpServer({ name: "imap-mcp", version: "1.3.1" });
 
 const accountArg = z
   .string()
@@ -115,7 +115,7 @@ server.registerTool(
         await getTransport(acc).verify();
         result.smtp = acc.allowSend === false ? "OK - aber Senden ist deaktiviert" : "OK";
       } catch (err) {
-        result.smtp = `FEHLER - ${(err as Error).message}`;
+        result.smtp = `FEHLER - ${(mitAnbieterHinweis(err, acc) as Error).message}`;
       }
       return ok(result);
     } catch (err) {

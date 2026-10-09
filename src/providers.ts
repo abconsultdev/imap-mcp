@@ -23,6 +23,17 @@ interface Preset {
   hinweis?: string;
 }
 
+/**
+ * Microsoft hat die Passwort-Anmeldung für private Konten am 16.09.2024
+ * abgeschaltet, App-Passwörter eingeschlossen. Der Server antwortet dann mit
+ * "LOGIN failed" bzw. "Login disabled", auch wenn IMAP im Konto aktiv ist.
+ */
+export const MICROSOFT_PRIVAT =
+  "Private Microsoft-Konten (Outlook.com, Hotmail, Live, MSN) erlauben seit September 2024 keine Anmeldung per " +
+  "Passwort mehr, auch nicht mit App-Passwort - nur noch OAuth2, und das kann dieser Connector nicht. Das Postfach " +
+  "lässt sich deshalb nicht anbinden, auch wenn IMAP im Microsoft-Konto eingeschaltet ist. Ein persönliches " +
+  "Microsoft-365-Abo ändert daran nichts. Ausweg: die Mails an ein anderes Postfach weiterleiten und dieses einrichten.";
+
 const PRESETS: Preset[] = [
   {
     anbieter: "Strato",
@@ -69,12 +80,24 @@ const PRESETS: Preset[] = [
       "Gmail verlangt ein App-Passwort (Google-Konto → Sicherheit → App-Passwörter). Das normale Kontopasswort wird abgelehnt. Zwei-Faktor-Authentifizierung muss dafür aktiv sein.",
   },
   {
+    anbieter: "Outlook.com / Hotmail (privates Microsoft-Konto)",
+    imapHost: "outlook.office365.com",
+    imapPort: 993,
+    smtpHost: "smtp.office365.com",
+    smtpPort: 587,
+    domains: [
+      "outlook.com", "outlook.de", "outlook.at",
+      "hotmail.com", "hotmail.de", "hotmail.at", "hotmail.ch",
+      "live.com", "live.de", "live.at", "msn.com",
+    ],
+    hinweis: MICROSOFT_PRIVAT,
+  },
+  {
     anbieter: "Microsoft 365 / Outlook",
     imapHost: "outlook.office365.com",
     imapPort: 993,
     smtpHost: "smtp.office365.com",
     smtpPort: 587,
-    domains: ["outlook.com", "outlook.de", "hotmail.com", "hotmail.de", "live.com", "live.de", "msn.com"],
     mxPatterns: [/(^|\.)protection\.outlook\.com$/i, /(^|\.)outlook\.com$/i],
     hinweis:
       "Viele Microsoft-365-Tenants haben die Anmeldung per Passwort (Basic Auth) abgeschaltet. Dann ist keine Anbindung möglich - dieser Server kann kein OAuth2.",
