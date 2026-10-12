@@ -1,5 +1,15 @@
 import MailComposer from "nodemailer/lib/mail-composer/index.js";
-import { htmlToText, formatAddresses, truncate } from "../dist/mail.js";
+import { htmlToText, formatAddresses, truncate, summarize } from "../dist/mail.js";
+
+// IMAP-Flags beginnen mit einem Backslash. Im Quelltext muss er verdoppelt
+// werden ("\\Seen"), sonst wird daraus stillschweigend "Seen".
+const gelesen = summarize({ uid: 1, flags: new Set(["\\Seen"]), envelope: {} });
+const ungelesen = summarize({ uid: 2, flags: new Set(["\\Flagged"]), envelope: {} });
+if (gelesen.seen !== true || ungelesen.seen !== false) {
+  console.error("FEHLER: seen wird falsch ausgewertet", gelesen.seen, ungelesen.seen);
+  process.exit(1);
+}
+console.log("seen aus \\Seen: OK");
 
 const raw = await new Promise((res, rej) =>
   new MailComposer({

@@ -55,6 +55,7 @@ const leerAus = (datei) => {
 };
 const leer = leerAus("manifest-10.json");
 const leerStandard = leerAus("manifest.json");
+const leerEinzeln = leerAus("manifest-10-einzeln.json");
 const eins = { ...leer, MAIL_EMAIL: "anna.beispiel@web.de", MAIL_PASSWORD: "platzhalter" };
 const zwei = { ...eins, MAIL2_EMAIL: "kunde@gmx.de", MAIL2_PASSWORD: "platzhalter2" };
 const zehnAdressen = [
@@ -69,6 +70,12 @@ zehnAdressen.forEach((a, i) => {
 });
 const einsStandard = { ...leerStandard, MAIL_EMAIL: "anna.beispiel@web.de", MAIL_PASSWORD: "platzhalter" };
 const zweiStandard = { ...einsStandard, MAIL2_EMAIL: "kunde@gmx.de", MAIL2_PASSWORD: "platzhalter2" };
+const zehnEinzeln = { ...leerEinzeln };
+zehnAdressen.forEach((a, i) => {
+  const p = i === 0 ? "MAIL_" : `MAIL${i + 1}_`;
+  zehnEinzeln[p + "EMAIL"] = a;
+  zehnEinzeln[p + "PASSWORD"] = `pw${i + 1}`;
+});
 const senden = { to: ["a@b.de"], subject: "s", text: "t" };
 const als = (r, i, user) => r.json?.[i].imap.endsWith(` als ${user}`) && r.json?.[i].smtp.endsWith(` als ${user}`);
 
@@ -153,6 +160,16 @@ const faelle = [
     (r) => r.json?.[0].imap.startsWith("imap.example.net") && r.json?.[0].smtp.startsWith("smtp.example.net")],
   ["Standard: Senden ohne Haken gesperrt", einsStandard, "mail_send", senden,
     (r) => r.text.includes("deaktiviert")],
+
+  // --- Zehn mit Feldern je Postfach (manifest-10-einzeln.json) ---
+  ["Einzeln: zehn Postfächer, alle erkannt", zehnEinzeln, "mail_list_accounts", {},
+    (r) => r.json?.length === 10 && r.json.every((a, i) => a.email === zehnAdressen[i] && a.sendenErlaubt === false)],
+  ["Einzeln: Senden nur bei Postfach 4 und 10", { ...zehnEinzeln, MAIL4_ALLOW_SEND: "true", MAIL10_ALLOW_SEND: "true" }, "mail_list_accounts", {},
+    (r) => r.json?.filter((a) => a.sendenErlaubt).map((a) => a.email).join() === "b@t-online.de,h@gmx.net"],
+  ["Einzeln: Felder von Postfach 7", { ...zehnEinzeln, MAIL7_DISPLAY_NAME: "E", MAIL7_USER: "ee", MAIL7_IMAP_HOST: "imap.example.net", MAIL7_SMTP_HOST: "smtp.example.net" }, "mail_list_accounts", {},
+    (r) => r.json?.[6].displayName === "E" && als(r, 6, "ee") && r.json[6].imap.startsWith("imap.example.net") && r.json[6].smtp.startsWith("smtp.example.net") && als(r, 5, "d@mailbox.org")],
+  ["Einzeln: Postfach 9 ohne Passwort", { ...leerEinzeln, MAIL_EMAIL: "anna.beispiel@web.de", MAIL_PASSWORD: "x", MAIL9_EMAIL: "g@outlook.com" }, "mail_list_accounts", {},
+    (r) => r.text.includes("Postfach 9 fehlt das Passwort")],
 ];
 
 let fehler = 0;

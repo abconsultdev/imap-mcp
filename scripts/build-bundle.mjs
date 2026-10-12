@@ -5,6 +5,9 @@
  *
  *   imap-mail.mcpb      manifest.json      bis zu zwei Postfächer, alles je Postfach
  *   imap-mail-10.mcpb   manifest-10.json   bis zu zehn, Sonderfälle in Sammelfeldern
+ *   imap-mail-10-einzeln.mcpb   manifest-10-einzeln.json   bis zu zehn, alles je Postfach
+ *
+ * manifest-10-einzeln.json wird vorab aus manifest.json erzeugt.
  *
  *   node scripts/build-bundle.mjs           bauen und prüfen
  *   node scripts/build-bundle.mjs --skip-checks   nur bauen
@@ -53,8 +56,9 @@ const schritte = skipChecks ? 4 : 6;
 let n = 0;
 const schritt = (text) => console.log(`\n${++n}/${schritte}  ${text}`);
 
-schritt("Typen prüfen");
+schritt("Typen prüfen, manifest-10-einzeln.json erzeugen");
 run("npx", ["tsc", "--noEmit"]);
+run(process.execPath, [join(root, "scripts", "manifest-10-einzeln.mjs")]);
 
 schritt("Staging-Ordner vorbereiten");
 await rm(buildDir, { recursive: true, force: true });
@@ -86,6 +90,7 @@ for (const extra of ["README.md", "icon.png"]) {
 const VARIANTEN = [
   { manifest: "manifest.json", datei: "imap-mail.mcpb" },
   { manifest: "manifest-10.json", datei: "imap-mail-10.mcpb" },
+  { manifest: "manifest-10-einzeln.json", datei: "imap-mail-10-einzeln.mcpb" },
 ];
 for (const { manifest: quelle, datei } of VARIANTEN) {
   const manifest = JSON.parse(await readFile(join(root, quelle), "utf8"));

@@ -11,7 +11,7 @@ import { searchMessages, fetchParsed, fetchRawSource, formatAddresses, htmlToTex
 import { getTransport, closeAllSmtp } from "./smtp.js";
 import { detectServers, knownProviders } from "./providers.js";
 
-const server = new McpServer({ name: "imap-mcp", version: "1.3.1" });
+const server = new McpServer({ name: "imap-mcp", version: "1.4.0" });
 
 const accountArg = z
   .string()
@@ -37,7 +37,7 @@ function guardSend(account: Account): void {
   if (account.allowSend === false) {
     throw new Error(
       `Für Account "${account.name}" ist das Senden deaktiviert. Freigeben lässt es sich in den Einstellungen der ` +
-        `Erweiterung („Senden erlauben“, in der Variante mit zehn Postfächern „Senden erlauben für“), ` +
+        `Erweiterung („Senden erlauben“, im Zehner-Paket mit Sammelfeldern „Senden erlauben für“), ` +
         `in config.json mit "allowSend": true.`
     );
   }

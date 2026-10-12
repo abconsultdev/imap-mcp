@@ -43,7 +43,7 @@ export function summarize(msg: FetchMessageObject): MessageSummary {
     cc: env?.cc?.length ? formatAddresses(env.cc) : undefined,
     subject: env?.subject ?? "(kein Betreff)",
     flags,
-    seen: flags.includes("\Seen"),
+    seen: flags.includes("\\Seen"),
     size: msg.size,
     messageId: env?.messageId,
     hasAttachments: hasAttachment(struct),
@@ -135,7 +135,7 @@ export async function fetchParsed(account: Account, mailbox: string, uid: number
     const lock = await client.getMailboxLock(mailbox, { readOnly: !markSeen });
     try {
       const source = await fetchSource(client, uid);
-      if (markSeen) await client.messageFlagsAdd(String(uid), ["\Seen"], { uid: true });
+      if (markSeen) await client.messageFlagsAdd(String(uid), ["\\Seen"], { uid: true });
       return await simpleParser(source);
     } finally {
       lock.release();

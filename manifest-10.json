@@ -2,7 +2,7 @@
   "manifest_version": "0.1",
   "name": "imap-mail-10",
   "display_name": "E-Mail (IMAP & SMTP) – bis zu 10 Postfächer",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Verbindet Claude mit bis zu zehn E-Mail-Postfächern über IMAP und SMTP - ohne Umweg über einen Anbieter-Konnektor.",
   "long_description": "Liest, durchsucht und sortiert Mails in jedem IMAP-Postfach und verschickt Antworten über SMTP. Die Server-Einstellungen werden automatisch aus der E-Mail-Adresse ermittelt, in den meisten Fällen genügen Adresse und Passwort. Bis zu zehn Postfächer lassen sich gleichzeitig einrichten. Passwörter werden im Schlüsselbund des Betriebssystems abgelegt, nicht in einer Datei. Alles läuft lokal auf dem eigenen Rechner; Mails gehen ausschließlich an den eigenen Mailserver.",
   "author": {

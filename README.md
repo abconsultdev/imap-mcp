@@ -8,7 +8,7 @@ Es gibt zwei Wege:
 | | [Weg A: Fertiges Bundle](#weg-a-fertiges-bundle) | [Weg B: Aus dem Quellcode](#weg-b-aus-dem-quellcode) |
 | --- | --- | --- |
 | Für wen | alle, die einfach ihr Postfach anbinden wollen | Entwicklung, mehr als zehn Postfächer, Linux, Claude Code |
-| Postfächer | bis zu zwei, mit dem [Zehner-Paket](#mehr-als-zwei-postfächer-das-zehner-paket) bis zu zehn | beliebig viele |
+| Postfächer | bis zu zwei, mit den [Zehner-Paketen](#mehr-als-zwei-postfächer-die-zehner-pakete) bis zu zehn | beliebig viele |
 | Voraussetzungen | nur Claude Desktop (macOS oder Windows) | Node ≥ 18.17, Terminal |
 | Installation | Datei doppelklicken, Adresse + Passwort eintippen | klonen, bauen, JSON konfigurieren |
 | Server-Einstellungen | automatisch erkannt | automatisch oder von Hand |
@@ -65,7 +65,7 @@ Die meisten Probleme entstehen nicht im Connector, sondern beim Mail-Anbieter:
   abgeschaltet. Dann lässt sich das Postfach mit diesem Connector nicht anbinden (siehe [Einschränkungen](#einschränkungen)).
 - **Anmeldename ist nicht die Adresse:** Manche Anbieter und viele Firmenserver vergeben eigene
   Benutzernamen, etwa `m0123456` bei All-Inkl oder einen Windows-Anmeldenamen bei Exchange. Den dann im
-  Feld **Benutzername** eintragen (im Zehner-Paket: **Abweichende Benutzernamen**); er gilt für IMAP und SMTP. Die Server werden trotzdem aus der
+  Feld **Benutzername** eintragen (im Zehner-Paket mit Sammelfeldern: **Abweichende Benutzernamen**); er gilt für IMAP und SMTP. Die Server werden trotzdem aus der
   Adresse erkannt.
 - **Eigene Domain:** Funktioniert in der Regel ohne weitere Angaben, weil der Anbieter über den
   MX-Eintrag der Domain erkannt wird.
@@ -98,13 +98,27 @@ diese Angabe, kommt eine Rückfrage statt einer stillen Annahme — das zählt v
 keine Mail vom falschen Absender rausgeht. Im Chat reicht es, das Postfach beim Namen zu nennen:
 *„Was ist heute im Geschäftspostfach reingekommen?"*
 
-## Mehr als zwei Postfächer: das Zehner-Paket
+## Mehr als zwei Postfächer: die Zehner-Pakete
 
-Für bis zu zehn Postfächer gibt es ein eigenes Paket mit demselben Funktionsumfang:
-**[`imap-mail-10.mcpb` herunterladen](https://github.com/abconsultdev/imap-mcp/releases/latest/download/imap-mail-10.mcpb)**.
+Für bis zu zehn Postfächer gibt es zwei eigene Pakete mit demselben Funktionsumfang. Sie unterscheiden
+sich nur darin, wie der Installationsdialog aufgebaut ist:
 
-Zehn Postfächer mit allen Einzelfeldern ergäben einen Dialog mit über siebzig Feldern. Das Zehner-Paket
-fragt deshalb je Postfach nur Adresse und Passwort ab. Alles, was man selten braucht, steht darunter in
+| | Felder je Postfach | Sammelfelder |
+| --- | --- | --- |
+| Download | **[`imap-mail-10-einzeln.mcpb`](https://github.com/abconsultdev/imap-mcp/releases/latest/download/imap-mail-10-einzeln.mcpb)** | **[`imap-mail-10.mcpb`](https://github.com/abconsultdev/imap-mcp/releases/latest/download/imap-mail-10.mcpb)** |
+| Dialog | wie im Standard-Paket, nur zehnmal: jedes Postfach hat eigene Felder | je Postfach nur Adresse und Passwort, Sonderfälle in wenigen gemeinsamen Feldern |
+| Felder | 71, langer Dialog | 25, kurzer Dialog |
+| Geeignet für | alle, die nichts in Listen tippen möchten | viele Postfächer, die bis auf Adresse und Passwort nichts brauchen |
+
+### Felder je Postfach (`imap-mail-10-einzeln.mcpb`)
+
+Für jedes der zehn Postfächer gibt es dieselben Felder wie im Standard-Paket: Adresse, Passwort,
+Benutzername, „Senden erlauben", Absendername und — gesammelt am Ende des Dialogs — IMAP- und
+SMTP-Server. Nicht benötigte Postfächer bleiben einfach leer.
+
+### Sammelfelder (`imap-mail-10.mcpb`)
+
+Hier stehen je Postfach nur Adresse und Passwort. Alles, was man selten braucht, steht darunter in
 wenigen gemeinsamen Feldern, in denen jeder Eintrag mit der Adresse des Postfachs beginnt:
 
 | Feld | |
@@ -122,8 +136,10 @@ In den gemeinsamen Feldern trennt ein **Semikolon** die Postfächer, so dürfen 
 eine Adresse, die oben nicht eingetragen ist, startet der Connector nicht, sondern meldet genau diese
 Zeile — ein Tippfehler bleibt also nicht unbemerkt.
 
-**Nur eines der beiden Pakete installieren.** Claude Desktop führt sie als getrennte Erweiterungen;
-beide zugleich würden jedes Werkzeug doppelt anbieten. Wer wechselt, deinstalliert das alte Paket vorher.
+### Nur ein Paket installieren
+
+Claude Desktop führt alle drei Pakete als getrennte Erweiterungen; mehrere zugleich würden jedes
+Werkzeug doppelt anbieten. Wer wechselt, deinstalliert das alte Paket vorher.
 
 Mehr als zehn gehen über ein Bundle nicht, weil das Manifest-Format keine beliebig langen Feldlisten
 kennt. Über `config.json` (Weg B) ist die Zahl unbegrenzt.
@@ -351,14 +367,14 @@ scheitert. Was tatsächlich erkannt wurde, zeigt `mail_test_connection` unter `s
 **`Authentication failed` / `LOGIN failed`**
 
 Passwort falsch, der Anbieter verlangt ein App-Passwort (Gmail, iCloud, Yahoo), oder der Anmeldename ist
-nicht die E-Mail-Adresse — dann im Feld **Benutzername** (Zehner-Paket: **Abweichende Benutzernamen**)
+nicht die E-Mail-Adresse — dann im Feld **Benutzername** (Zehner-Paket mit Sammelfeldern: **Abweichende Benutzernamen**)
 den richtigen eintragen. Welcher Name benutzt
 wurde, zeigt `mail_test_connection` unter `benutzer`. Bei GMX und Web.de
 ist IMAP außerdem standardmäßig deaktiviert und muss im Webmail freigeschaltet werden.
 
 **Senden schlägt mit „Senden ist deaktiviert" fehl**
 
-Beabsichtigt. Im Installationsdialog den Haken „Senden erlauben" setzen (Zehner-Paket: die Adresse unter
+Beabsichtigt. Im Installationsdialog den Haken „Senden erlauben" setzen (Zehner-Paket mit Sammelfeldern: die Adresse unter
 „Senden erlauben für" eintragen), in `config.json` `"allowSend": true`, per Umgebungsvariable
 `MAIL_ALLOW_SEND=true` oder `MAIL_ALLOW_SEND_FOR=adresse`.
 
@@ -390,17 +406,19 @@ Tritt nur mit Versionen vor 1.0.1 auf. Alte Erweiterung deinstallieren, aktuelle
 ```bash
 npm run build              # nach dist/ kompilieren (Weg B)
 npm run watch              # während der Entwicklung
-npm run bundle             # build/imap-mail.mcpb und imap-mail-10.mcpb bauen, inkl. aller Prüfungen (Weg A)
+npm run bundle             # alle drei .mcpb-Pakete nach build/, inkl. aller Prüfungen (Weg A)
 node test/unit.mjs         # Helfer + MailComposer (ohne Netzwerk)
 node test/detect.mjs       # Anbieter-Erkennung: Liste, MX-Muster, Autoconfig
-node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 35 Fälle
+node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 39 Fälle
 node test/live.mjs         # gegen das echte Postfach aus config.json, rein lesend
 ```
 
-**Zwei Pakete, ein Server:** `imap-mail.mcpb` und `imap-mail-10.mcpb` enthalten denselben Server und
-unterscheiden sich nur im Manifest (`manifest.json` bzw. `manifest-10.json`), also im Installationsdialog.
-Der Server versteht beide Arten von Feldern. Die Konfigurationsmatrix liest die Felder direkt aus
-beiden Manifesten.
+**Drei Pakete, ein Server:** `imap-mail.mcpb`, `imap-mail-10.mcpb` und `imap-mail-10-einzeln.mcpb` enthalten
+denselben Server und unterscheiden sich nur im Manifest (`manifest.json`, `manifest-10.json`,
+`manifest-10-einzeln.json`), also im Installationsdialog. Der Server versteht beide Arten von Feldern.
+`manifest-10-einzeln.json` wird von `scripts/manifest-10-einzeln.mjs` aus `manifest.json` erzeugt (läuft bei
+`npm run bundle` mit) und wird nicht von Hand bearbeitet. Die Konfigurationsmatrix liest die Felder direkt
+aus allen drei Manifesten.
 
 **Das Bundle** wird mit esbuild zu einer einzigen JavaScript-Datei gebündelt: vier Dateien statt rund
 5000, knapp 1 MB statt 6 MB. Ohne Bündelung lägen Typdeklarationen, Sourcemaps und die HTTP-Transporte
@@ -426,6 +444,7 @@ IMAP-Verbindungen werden pro Account wiederverwendet und nach 5 Minuten Leerlauf
 
 | Version | |
 | --- | --- |
+| 1.4.0 | Drittes Paket `imap-mail-10-einzeln.mcpb`: bis zu zehn Postfächer, jedes mit eigenen Feldern wie im Standard-Paket. Behoben: Gelesen-Status (`seen`) war immer `false`, `markSeen` markierte nicht als gelesen, Sonderordner wurden nicht über SPECIAL-USE erkannt |
 | 1.3.1 | Klarer Hinweis, dass Hotmail, Outlook.com, Live und MSN nicht unterstützt werden (Microsoft erlaubt dort nur noch OAuth2) |
 | 1.3.0 | Zusätzliches Zehner-Paket `imap-mail-10.mcpb`: bis zu zehn Postfächer, Senden, Absendernamen, Benutzernamen und Server in gemeinsamen Feldern. Das Standard-Paket bleibt unverändert |
 | 1.2.0 | Eigener Benutzername, falls er nicht der E-Mail-Adresse entspricht |

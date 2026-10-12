@@ -126,7 +126,7 @@ export async function resolveSpecialMailbox(
   const configured = account.mailboxes?.[role];
   if (configured) return configured;
 
-  const flag = { sent: "\Sent", drafts: "\Drafts", trash: "\Trash", junk: "\Junk" }[role];
+  const flag = { sent: "\\Sent", drafts: "\\Drafts", trash: "\\Trash", junk: "\\Junk" }[role];
   const fallbacks: Record<typeof role, string[]> = {
     sent: ["Sent", "Gesendet", "Gesendete Elemente", "Sent Items", "INBOX.Sent"],
     drafts: ["Drafts", "Entwürfe", "INBOX.Drafts"],
