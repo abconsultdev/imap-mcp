@@ -5,13 +5,13 @@ import { z } from "zod";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import MailComposer from "nodemailer/lib/mail-composer/index.js";
-import { loadConfig, getAccount, fromHeader, type Account } from "./config.js";
+import { loadConfig, getAccount, fromHeader, passwortCheck, type Account } from "./config.js";
 import { withImap, listMailboxes, resolveSpecialMailbox, closeAllImap, mitAnbieterHinweis } from "./imap.js";
 import { searchMessages, fetchParsed, fetchRawSource, formatAddresses, htmlToText, truncate } from "./mail.js";
 import { getTransport, closeAllSmtp } from "./smtp.js";
 import { detectServers, knownProviders } from "./providers.js";
 
-const server = new McpServer({ name: "imap-mcp", version: "1.4.0" });
+const server = new McpServer({ name: "imap-mcp", version: "1.4.1" });
 
 const accountArg = z
   .string()
@@ -86,7 +86,10 @@ server.registerTool(
   "mail_test_connection",
   {
     title: "Verbindung testen",
-    description: "Prüft IMAP-Login und SMTP-Login eines Accounts und meldet beide Ergebnisse einzeln.",
+    description:
+      "Prüft IMAP-Login und SMTP-Login eines Accounts und meldet beide Ergebnisse einzeln. Zeigt unter passwortCheck " +
+      "Länge und auffällige Zeichen des Passworts (nie das Passwort selbst) - hilfreich, wenn die Anmeldung trotz " +
+      "richtigem Passwort scheitert, etwa wegen mitkopierter unsichtbarer Zeichen.",
     inputSchema: { account: accountArg },
     annotations: { readOnlyHint: true, openWorldHint: true },
   },
@@ -99,6 +102,10 @@ server.registerTool(
         benutzer: acc.imap.user === acc.smtp.user ? acc.imap.user : { imap: acc.imap.user, smtp: acc.smtp.user },
         imapServer: `${acc.imap.host}:${acc.imap.port}`,
         smtpServer: `${acc.smtp.host}:${acc.smtp.port}`,
+        passwortCheck:
+          acc.imap.pass === acc.smtp.pass
+            ? passwortCheck(acc.imap.pass, acc.passwortGekuerzt)
+            : { imap: passwortCheck(acc.imap.pass, acc.passwortGekuerzt), smtp: passwortCheck(acc.smtp.pass) },
       };
       if (acc.erkennung) {
         result.serverErkanntVia = acc.erkennung.quelle;

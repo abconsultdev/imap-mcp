@@ -372,6 +372,23 @@ den richtigen eintragen. Welcher Name benutzt
 wurde, zeigt `mail_test_connection` unter `benutzer`. Bei GMX und Web.de
 ist IMAP außerdem standardmäßig deaktiviert und muss im Webmail freigeschaltet werden.
 
+Wird ein Passwort abgelehnt, das nachweislich stimmt, lohnt der Blick auf `passwortCheck` in der Antwort von
+`mail_test_connection`. Dort stehen Länge, Anzahl der Leerzeichen, ob Zeichen außerhalb von ASCII vorkommen,
+und ob **unsichtbare Zeichen** mitkopiert wurden, etwa ein geschütztes Leerzeichen aus den Vierergruppen
+eines Gmail-App-Passworts. Das Passwort selbst wird nie angezeigt.
+
+**Passwort mit `$$` wird abgelehnt**
+
+Claude Desktop macht beim Übergeben der Einstellungen aus jedem doppelten Dollarzeichen `$$` ein einzelnes `$`
+(getestet mit Claude Desktop 3.1623 unter Windows: aus `A$$$$B` wird `A$$B`). Das Passwort kommt dann um ein Zeichen
+kürzer beim Connector an, und der Mailserver lehnt es ab. Der Connector kann das nicht ausgleichen, weil er das
+Original nie zu sehen bekommt. `passwortCheck` zeigt es an: Die Länge ist kleiner als erwartet. Abhilfe: das
+Passwort beim Anbieter ändern, sodass kein `$$` mehr darin vorkommt.
+
+Alle anderen getesteten Zeichen kommen unverändert an: ein einzelnes `$`, auch als `${…}`, Backslashes,
+gerade und typografische Anführungszeichen, Umlaute, `€`, Leerzeichen, Tabulator, geschützte und
+Null-Breite-Leerzeichen, Shell-, URL- und JSON-Zeichen, Emojis und Passwörter mit über 100 Zeichen.
+
 **Senden schlägt mit „Senden ist deaktiviert" fehl**
 
 Beabsichtigt. Im Installationsdialog den Haken „Senden erlauben" setzen (Zehner-Paket mit Sammelfeldern: die Adresse unter
@@ -409,7 +426,7 @@ npm run watch              # während der Entwicklung
 npm run bundle             # alle drei .mcpb-Pakete nach build/, inkl. aller Prüfungen (Weg A)
 node test/unit.mjs         # Helfer + MailComposer (ohne Netzwerk)
 node test/detect.mjs       # Anbieter-Erkennung: Liste, MX-Muster, Autoconfig
-node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 39 Fälle
+node test/env-matrix.mjs   # Konfiguration über Umgebungsvariablen, 41 Fälle
 node test/live.mjs         # gegen das echte Postfach aus config.json, rein lesend
 ```
 
@@ -444,6 +461,7 @@ IMAP-Verbindungen werden pro Account wiederverwendet und nach 5 Minuten Leerlauf
 
 | Version | |
 | --- | --- |
+| 1.4.1 | `mail_test_connection` zeigt einen Passwort-Check (Länge, unsichtbare Zeichen, Nicht-ASCII), ohne das Passwort preiszugeben. Behoben: Ein Passwort, das `${…}` enthielt, galt als leer und blockierte alle Postfächer. README: Claude Desktop macht aus `$$` im Passwort ein einzelnes `$` |
 | 1.4.0 | Drittes Paket `imap-mail-10-einzeln.mcpb`: bis zu zehn Postfächer, jedes mit eigenen Feldern wie im Standard-Paket. Behoben: Gelesen-Status (`seen`) war immer `false`, `markSeen` markierte nicht als gelesen, Sonderordner wurden nicht über SPECIAL-USE erkannt |
 | 1.3.1 | Klarer Hinweis, dass Hotmail, Outlook.com, Live und MSN nicht unterstützt werden (Microsoft erlaubt dort nur noch OAuth2) |
 | 1.3.0 | Zusätzliches Zehner-Paket `imap-mail-10.mcpb`: bis zu zehn Postfächer, Senden, Absendernamen, Benutzernamen und Server in gemeinsamen Feldern. Das Standard-Paket bleibt unverändert |

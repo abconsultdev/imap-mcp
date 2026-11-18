@@ -37,6 +37,8 @@ export interface Account {
   mailboxes?: MailboxNames;
   /** Gesetzt, wenn die Server automatisch ermittelt wurden. */
   erkennung?: DetectedServers;
+  /** Das Passwort hatte Leerzeichen am Anfang oder Ende, die abgeschnitten wurden. */
+  passwortGekuerzt?: boolean;
 }
 
 export interface Config {
@@ -54,8 +56,11 @@ const projectRoot = resolve(here, "..");
  * ankommt. Solche Werte gelten hier als "nicht gesetzt" - sonst landet der
  * Platzhalter als Hostname im DNS (getaddrinfo ENOTFOUND) oder als
  * Absendername in versendeten Mails.
+ *
+ * Nur der vollständige Platzhalter zählt: Ein Passwort wie "Ab${x}9" ist ein
+ * echter Wert und darf nicht verschwinden.
  */
-const UNRESOLVED_TEMPLATE = /\$\{[^}]*\}/;
+const UNRESOLVED_TEMPLATE = /^\$\{user_config\.[^}]*\}$/;
 
 function env(name: string): string | undefined {
   const raw = process.env[name];
@@ -230,6 +235,11 @@ async function accountFromEnv(
     );
   }
 
+  // env() schneidet Leerzeichen am Rand ab; der Passwort-Check meldet das.
+  const rohesPasswort = env(prefix + "PASSWORD") !== undefined
+    ? process.env[prefix + "PASSWORD"]
+    : process.env.IMAP_PASS;
+
   // Einzelvariablen (MAIL3_IMAP_HOST, ...) gehen vor den Sammelfeldern.
   const key = email.toLowerCase();
   const server = sammel.server.get(key);
@@ -265,6 +275,7 @@ async function accountFromEnv(
       pass: v("SMTP_PASS", "SMTP_PASS") ?? password,
     },
     erkennung,
+    passwortGekuerzt: rohesPasswort !== password || undefined,
   };
 }
 
@@ -372,6 +383,47 @@ export async function getAccount(name?: string): Promise<Account> {
     throw new Error(`Account "${name}" unbekannt. Verfügbar: ${cfg.accounts.map((a) => a.name).join(", ")}`);
   }
   return hit;
+}
+
+/** Zeichen, die man nicht sieht und die beim Kopieren gern mitwandern. */
+const UNSICHTBAR: Record<number, string> = {
+  0x09: "Tabulator",
+  0xa0: "geschütztes Leerzeichen",
+  0xad: "weiches Trennzeichen",
+  0x2007: "geschütztes Ziffern-Leerzeichen",
+  0x200b: "Null-Breite-Leerzeichen",
+  0x200c: "Null-Breite-Nichtverbinder",
+  0x200d: "Null-Breite-Verbinder",
+  0x2011: "geschützter Bindestrich",
+  0x202f: "schmales geschütztes Leerzeichen",
+  0x2060: "Wortverbinder",
+  0xfeff: "Byte-Order-Mark",
+};
+
+/**
+ * Beschreibt ein Passwort, ohne es preiszugeben: Länge und auffällige
+ * Zeichenarten. Reicht im Support, um mitkopierte unsichtbare Zeichen oder
+ * verstümmelte Sonderzeichen zu erkennen.
+ */
+export function passwortCheck(pass: string, gekuerzt?: boolean): Record<string, unknown> {
+  const zeichen = [...pass];
+  const unsichtbar = new Map<string, number>();
+  let steuerzeichen = 0;
+  for (const z of zeichen) {
+    const cp = z.codePointAt(0)!;
+    const name = UNSICHTBAR[cp];
+    if (name) unsichtbar.set(name, (unsichtbar.get(name) ?? 0) + 1);
+    else if (cp < 0x20 || cp === 0x7f) steuerzeichen++;
+  }
+  const check: Record<string, unknown> = {
+    laenge: zeichen.length,
+    leerzeichen: zeichen.filter((z) => z === " ").length,
+    nichtAscii: zeichen.some((z) => z.codePointAt(0)! > 0x7e),
+  };
+  if (unsichtbar.size) check.unsichtbareZeichen = Object.fromEntries(unsichtbar);
+  if (steuerzeichen) check.steuerzeichen = steuerzeichen;
+  if (gekuerzt) check.hinweis = "Leerzeichen am Anfang oder Ende des Passworts wurden entfernt.";
+  return check;
 }
 
 export function fromHeader(account: Account): string {

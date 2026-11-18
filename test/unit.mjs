@@ -1,5 +1,6 @@
 import MailComposer from "nodemailer/lib/mail-composer/index.js";
 import { htmlToText, formatAddresses, truncate, summarize } from "../dist/mail.js";
+import { passwortCheck } from "../dist/config.js";
 
 // IMAP-Flags beginnen mit einem Backslash. Im Quelltext muss er verdoppelt
 // werden ("\\Seen"), sonst wird daraus stillschweigend "Seen".
@@ -10,6 +11,16 @@ if (gelesen.seen !== true || ungelesen.seen !== false) {
   process.exit(1);
 }
 console.log("seen aus \\Seen: OK");
+
+// Passwort-Check: beschreibt, verrät aber nichts.
+const pc = passwortCheck("Ab cd‑ef​gh");
+const pcEmoji = passwortCheck("Ab😀9 x");
+if (pc.laenge !== 11 || pc.unsichtbareZeichen?.["geschütztes Leerzeichen"] !== 1 || pc.unsichtbareZeichen?.["Null-Breite-Leerzeichen"] !== 1
+    || pcEmoji.laenge !== 6 || pcEmoji.leerzeichen !== 1 || pcEmoji.nichtAscii !== true || JSON.stringify(pc).includes("Ab")) {
+  console.error("FEHLER: passwortCheck", pc, pcEmoji);
+  process.exit(1);
+}
+console.log("passwortCheck: OK");
 
 const raw = await new Promise((res, rej) =>
   new MailComposer({

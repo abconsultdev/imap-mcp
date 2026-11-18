@@ -161,6 +161,16 @@ const faelle = [
   ["Standard: Senden ohne Haken gesperrt", einsStandard, "mail_send", senden,
     (r) => r.text.includes("deaktiviert")],
 
+  // --- Passwörter mit Sonderzeichen ---
+  ["Passwort mit ${x} bleibt erhalten", { ...einsStandard, MAIL_PASSWORD: "Ab${x}9" }, "mail_list_accounts", {},
+    (r) => r.json?.length === 1],
+  ["Passwort-Check: Länge und unsichtbare Zeichen",
+    { ...einsStandard, MAIL_PASSWORD: " Ab cd​9 ", MAIL_IMAP_HOST: "127.0.0.1", MAIL_IMAP_PORT: "1", MAIL_SMTP_HOST: "127.0.0.1", MAIL_SMTP_PORT: "1" },
+    "mail_test_connection", {},
+    (r) => r.json?.passwortCheck?.laenge === 7 && r.json.passwortCheck.unsichtbareZeichen?.["geschütztes Leerzeichen"] === 1
+      && r.json.passwortCheck.unsichtbareZeichen?.["Null-Breite-Leerzeichen"] === 1 && r.json.passwortCheck.hinweis?.includes("entfernt")
+      && !r.text.includes("Ab")],
+
   // --- Zehn mit Feldern je Postfach (manifest-10-einzeln.json) ---
   ["Einzeln: zehn Postfächer, alle erkannt", zehnEinzeln, "mail_list_accounts", {},
     (r) => r.json?.length === 10 && r.json.every((a, i) => a.email === zehnAdressen[i] && a.sendenErlaubt === false)],
